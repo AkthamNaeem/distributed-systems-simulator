@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { PageShell } from "@/components/PageShell";
 
 const conceptCoverage = [
   {
     page: "Home",
+    href: "/",
     action:
       "The user sees the shift from one local program to multiple services and servers.",
     concept:
@@ -12,6 +14,7 @@ const conceptCoverage = [
   },
   {
     page: "RMI Simulator",
+    href: "/rmi-simulator",
     action:
       "The user runs local call, remote call, server failure, pass-by-value, and pass-by-reference demos.",
     concept:
@@ -21,6 +24,7 @@ const conceptCoverage = [
   },
   {
     page: "Load Balancer Simulator",
+    href: "/load-balancer",
     action:
       "The user selects Round Robin, Greedy, Power of Two Choices, Least Connections, Least Response Time, Weighted Round Robin, Consistent Hashing, Sticky Sessions, or Resource-Aware routing and sends fake requests to servers.",
     concept:
@@ -30,6 +34,7 @@ const conceptCoverage = [
   },
   {
     page: "RPC vs Message Passing",
+    href: "/rpc-vs-message-passing",
     action:
       "The user compares direct RPC calls with queue-based message passing.",
     concept:
@@ -39,6 +44,7 @@ const conceptCoverage = [
   },
   {
     page: "Fault Tolerance Lab",
+    href: "/fault-tolerance",
     action:
       "The user tests service states, retry/backoff, circuit breaker, fallback, health check, and heartbeat.",
     concept:
@@ -48,6 +54,7 @@ const conceptCoverage = [
   },
   {
     page: "Sharding & Replication",
+    href: "/sharding-replication",
     action:
       "The user inserts and reads records using a shard key and tests replication or failure scenarios.",
     concept:
@@ -144,7 +151,12 @@ export default function FinalSummaryPage() {
               {conceptCoverage.map((row) => (
                 <tr key={row.page} className="align-top">
                   <th className="px-4 py-4 font-semibold text-slate-950">
-                    {row.page}
+                    <Link
+                      href={row.href}
+                      className="text-cyan-800 underline-offset-4 hover:underline"
+                    >
+                      {row.page}
+                    </Link>
                   </th>
                   <td className="px-4 py-4 leading-7">{row.action}</td>
                   <td className="px-4 py-4 leading-7">{row.concept}</td>
@@ -161,7 +173,14 @@ export default function FinalSummaryPage() {
               key={row.page}
               className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
             >
-              <h3 className="text-lg font-bold text-slate-950">{row.page}</h3>
+              <h3 className="text-lg font-bold text-slate-950">
+                <Link
+                  href={row.href}
+                  className="text-cyan-800 underline-offset-4 hover:underline"
+                >
+                  {row.page}
+                </Link>
+              </h3>
               <dl className="mt-4 space-y-4 text-sm leading-7">
                 <div>
                   <dt className="font-semibold text-slate-950">
@@ -209,6 +228,19 @@ export default function FinalSummaryPage() {
           infrastructure: routing, remote calls, queues, retries, failures,
           sharding, and replication.
         </p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          {conceptCoverage
+            .filter((row) => row.page !== "Home")
+            .map((row) => (
+              <Link
+                key={row.href}
+                href={row.href}
+                className="inline-flex min-h-10 items-center rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800 transition-colors hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-950"
+              >
+                Open {row.page}
+              </Link>
+            ))}
+        </div>
       </section>
 
       <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6">

@@ -64,6 +64,24 @@ const nodes: { id: RmiNode; label: string; detail: string }[] = [
 
 const waitTime = 460;
 
+const guide = {
+  howToUse: [
+    "Run a Local Call, then run a Remote Call to compare the flow.",
+    "Toggle server failure and run the remote call again.",
+    "Run the pass-by-value and pass-by-reference demos.",
+  ],
+  observe: [
+    "Local calls stay inside one process.",
+    "Remote calls need Stub, Registry lookup, Serialization, and network travel.",
+    "A failed remote server produces a RemoteException.",
+  ],
+  concepts: [
+    "Stub, Registry, Serialization, and RemoteException.",
+    "Pass-by-value copies ordinary objects.",
+    "Pass-by-reference for remote objects uses a Stub reference.",
+  ],
+};
+
 export default function RmiSimulatorPage() {
   const [serverFailed, setServerFailed] = useState(false);
   const [flowSteps, setFlowSteps] = useState<FlowStep[]>([]);
@@ -138,6 +156,7 @@ export default function RmiSimulatorPage() {
     <PageShell
       title="RMI and Service Registry Simulator"
       subtitle="This simulator shows how a local method call differs from a remote method call through a Stub, Registry lookup, Serialization, network latency, and possible remote failure."
+      guide={guide}
     >
       <section className="grid gap-4 lg:grid-cols-2">
         <ComparisonCard
@@ -204,6 +223,10 @@ export default function RmiSimulatorPage() {
             Reset
           </ActionButton>
         </div>
+        <p className="mt-3 text-sm leading-6 text-slate-600">
+          Start with the local call, then compare it with the remote call under
+          healthy and failed server states.
+        </p>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
@@ -240,7 +263,7 @@ export default function RmiSimulatorPage() {
             <ol className="mt-4 space-y-3">
               {flowSteps.length === 0 ? (
                 <li className="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-sm leading-6 text-slate-600">
-                  Choose a call mode to begin the simulation.
+                  No events yet. Run a simulation to see the flow.
                 </li>
               ) : (
                 flowSteps.map((step, index) => (

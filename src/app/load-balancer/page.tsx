@@ -102,6 +102,24 @@ const initialServers: Server[] = [
 const clients = ["Client 1", "Client 2", "Client 3"];
 const requestDuration = 900;
 
+const guide = {
+  howToUse: [
+    "Select a routing algorithm and choose a client/session key.",
+    "Send requests, fail Server B, then send more requests.",
+    "Add or remove servers to observe scalability behavior.",
+  ],
+  observe: [
+    "Requests are distributed differently by each algorithm.",
+    "Failed servers are avoided by health checking.",
+    "Weighted, sticky, hashing, and resource-aware modes show different trade-offs.",
+  ],
+  concepts: [
+    "Traffic distribution, health check, high availability, and scalability.",
+    "Weighted routing, sticky sessions, and consistent hashing.",
+    "Resource-aware routing based on simulated server load.",
+  ],
+};
+
 export default function LoadBalancerPage() {
   const [servers, setServers] = useState<Server[]>(initialServers);
   const [algorithm, setAlgorithm] = useState<Algorithm>("round-robin");
@@ -370,6 +388,7 @@ export default function LoadBalancerPage() {
     <PageShell
       title="Load Balancer Simulator"
       subtitle="This simulator shows how a load balancer distributes incoming client requests across multiple backend servers using different routing algorithms."
+      guide={guide}
     >
       <section className="grid gap-4 lg:grid-cols-3">
         {servers.map((server) => (
@@ -428,6 +447,10 @@ export default function LoadBalancerPage() {
             </select>
           </label>
         </div>
+        <p className="mt-3 text-sm leading-6 text-slate-600">
+          The client/session key matters most for Sticky Sessions and Consistent
+          Hashing because those algorithms try to keep routing stable.
+        </p>
 
         <div className="mt-5 flex flex-wrap gap-3">
           <ActionButton onClick={() => routeRequests(1)}>
@@ -477,20 +500,26 @@ export default function LoadBalancerPage() {
         <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-xl font-bold text-slate-950">Request Log</h2>
           <div className="mt-4 space-y-3">
-            {logs.map((log) => (
-              <div
-                key={log.id}
-                className={`rounded-lg border p-3 text-sm leading-6 ${
-                  log.tone === "warning"
-                    ? "border-amber-200 bg-amber-50 text-amber-900"
-                    : log.tone === "success"
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-                      : "border-slate-200 bg-slate-50 text-slate-700"
-                }`}
-              >
-                {log.text}
-              </div>
-            ))}
+            {logs.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+                No events yet. Run a simulation to see the flow.
+              </p>
+            ) : (
+              logs.map((log) => (
+                <div
+                  key={log.id}
+                  className={`rounded-lg border p-3 text-sm leading-6 ${
+                    log.tone === "warning"
+                      ? "border-amber-200 bg-amber-50 text-amber-900"
+                      : log.tone === "success"
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                        : "border-slate-200 bg-slate-50 text-slate-700"
+                  }`}
+                >
+                  {log.text}
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>

@@ -50,6 +50,24 @@ const conceptCards = [
   },
 ];
 
+const guide = {
+  howToUse: [
+    "Set the Payment Service to Healthy, Slow, or Failed.",
+    "Test Retry + Backoff, Circuit Breaker, Fallback, Health Check, and Heartbeat.",
+    "Use Half-Open recovery after the Circuit Breaker opens.",
+  ],
+  observe: [
+    "Slow services trigger retry and backoff before success.",
+    "Failed services return fallback responses.",
+    "The Circuit Breaker blocks repeated calls after failures.",
+  ],
+  concepts: [
+    "Retry, backoff, circuit breaker, fallback, health check, and heartbeat.",
+    "Acceptable service during component failure.",
+    "Fault tolerance manages failure instead of eliminating it.",
+  ],
+};
+
 export default function FaultTolerancePage() {
   const [serviceStatus, setServiceStatus] = useState<ServiceStatus>("Healthy");
   const [retryRunning, setRetryRunning] = useState(false);
@@ -271,6 +289,7 @@ export default function FaultTolerancePage() {
     <PageShell
       title="Fault Tolerance Lab"
       subtitle="This lab shows how distributed systems continue providing acceptable service when a component fails. It demonstrates retry with backoff, circuit breaker, fallback responses, health checks, and heartbeat monitoring."
+      guide={guide}
     >
       <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
@@ -322,6 +341,10 @@ export default function FaultTolerancePage() {
               Reset Lab
             </ActionButton>
           </div>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            Try the same request under each service state to compare normal,
+            degraded, and failed behavior.
+          </p>
         </div>
 
         <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
@@ -431,14 +454,20 @@ export default function FaultTolerancePage() {
       <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-xl font-bold text-slate-950">Recent Event Log</h2>
         <div className="mt-4 grid gap-3 lg:grid-cols-2">
-          {logs.map((log) => (
-            <div
-              key={log.id}
-              className={`rounded-lg border p-3 text-sm leading-6 ${getToneClass(log.tone)}`}
-            >
-              {log.text}
-            </div>
-          ))}
+          {logs.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+              No events yet. Run a simulation to see the flow.
+            </p>
+          ) : (
+            logs.map((log) => (
+              <div
+                key={log.id}
+                className={`rounded-lg border p-3 text-sm leading-6 ${getToneClass(log.tone)}`}
+              >
+                {log.text}
+              </div>
+            ))
+          )}
         </div>
       </section>
 

@@ -87,6 +87,24 @@ const proofItems = [
   "Distributed storage must handle partial failure.",
 ];
 
+const guide = {
+  howToUse: [
+    "Insert records and read records to see the shard key calculation.",
+    "Switch between no replication, active replication, and passive replication.",
+    "Sync passive replicas, then fail shards or replicas to test availability.",
+  ],
+  observe: [
+    "The shard key decides which shard owns each record.",
+    "Active replication copies immediately while passive replication waits for sync.",
+    "Replicas can serve reads when a primary shard fails.",
+  ],
+  concepts: [
+    "Shard key, data sharding, active replication, and passive replication.",
+    "High availability through replicated copies.",
+    "Fault tolerance during shard or replica failure.",
+  ],
+};
+
 export default function ShardingReplicationPage() {
   const [shards, setShards] = useState<Shard[]>(initialShards);
   const [replicationMode, setReplicationMode] =
@@ -416,6 +434,7 @@ export default function ShardingReplicationPage() {
     <PageShell
       title="Sharding & Replication Simulator"
       subtitle="This simulator shows how distributed storage divides records across shards using a shard key, and how replication keeps extra copies of data to improve availability and fault tolerance."
+      guide={guide}
     >
       <section className="grid gap-4 lg:grid-cols-3">
         {shards.map((shard) => (
@@ -469,6 +488,10 @@ export default function ShardingReplicationPage() {
               Reset Storage
             </ActionButton>
           </div>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            The routing rule is intentionally simple so the shard key result is
+            easy to explain during discussion.
+          </p>
 
           <ResultBox text={routeMessage} />
         </SimulatorPanel>
@@ -598,14 +621,20 @@ export default function ShardingReplicationPage() {
       <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-xl font-bold text-slate-950">Recent Event Log</h2>
         <div className="mt-4 grid gap-3 lg:grid-cols-2">
-          {logs.map((log) => (
-            <div
-              key={log.id}
-              className={`rounded-lg border p-3 text-sm leading-6 ${getToneClass(log.tone)}`}
-            >
-              {log.text}
-            </div>
-          ))}
+          {logs.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+              No events yet. Run a simulation to see the flow.
+            </p>
+          ) : (
+            logs.map((log) => (
+              <div
+                key={log.id}
+                className={`rounded-lg border p-3 text-sm leading-6 ${getToneClass(log.tone)}`}
+              >
+                {log.text}
+              </div>
+            ))
+          )}
         </div>
       </section>
 
@@ -673,7 +702,7 @@ function ShardCard({
       <RecordList
         title="Records stored in the shard"
         records={shard.records}
-        emptyText="No primary records yet."
+        emptyText="No records stored yet. Insert a record to start."
       />
 
       {replicationMode !== "none" ? (

@@ -83,6 +83,24 @@ const messageTemplates = [
 const stepDelay = 560;
 const autoProcessDelay = 850;
 
+const guide = {
+  howToUse: [
+    "Send RPC requests and toggle RPC service failure.",
+    "Produce messages, stop the consumer, and produce more messages.",
+    "Process the queue manually or with auto processing.",
+  ],
+  observe: [
+    "RPC makes the client wait for the service response.",
+    "RPC failure affects the caller immediately.",
+    "Messages build up in the queue while the consumer is stopped.",
+  ],
+  concepts: [
+    "Synchronous RPC and direct service dependency.",
+    "Producer, queue, and consumer roles.",
+    "Message passing decouples sender and receiver.",
+  ],
+};
+
 export default function RpcVsMessagePassingPage() {
   const [rpcFailed, setRpcFailed] = useState(false);
   const [rpcStatus, setRpcStatus] = useState<RpcStatus>("Idle");
@@ -326,6 +344,7 @@ export default function RpcVsMessagePassingPage() {
     <PageShell
       title="RPC vs Message Passing Simulator"
       subtitle="This simulator compares direct synchronous RPC calls with queue-based Message Passing. It shows how RPC makes the client wait for a service response, while Message Passing lets a producer place work into a queue for consumers to process later."
+      guide={guide}
     >
       <section className="grid gap-4 xl:grid-cols-2">
         <SimulatorPanel
@@ -395,7 +414,7 @@ export default function RpcVsMessagePassingPage() {
               <div className="mt-4 space-y-3">
                 {queue.length === 0 ? (
                   <div className="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-sm leading-6 text-slate-600">
-                    Queue is empty.
+                    No messages in queue. Produce a message first.
                   </div>
                 ) : (
                   queue.map((message) => (
@@ -438,7 +457,7 @@ export default function RpcVsMessagePassingPage() {
               onClick={toggleConsumer}
               variant={consumerRunning ? "danger" : "secondary"}
             >
-              Stop Consumer
+              {consumerRunning ? "Stop Consumer" : "Start Consumer"}
             </ActionButton>
             <ActionButton onClick={resetQueue} variant="secondary">
               Reset Queue
@@ -461,14 +480,20 @@ export default function RpcVsMessagePassingPage() {
       <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-xl font-bold text-slate-950">Simulation Log</h2>
         <div className="mt-4 grid gap-3 lg:grid-cols-2">
-          {logs.map((log) => (
-            <div
-              key={log.id}
-              className={`rounded-lg border p-3 text-sm leading-6 ${getToneClass(log.tone)}`}
-            >
-              {log.text}
-            </div>
-          ))}
+          {logs.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+              No events yet. Run a simulation to see the flow.
+            </p>
+          ) : (
+            logs.map((log) => (
+              <div
+                key={log.id}
+                className={`rounded-lg border p-3 text-sm leading-6 ${getToneClass(log.tone)}`}
+              >
+                {log.text}
+              </div>
+            ))
+          )}
         </div>
       </section>
 
