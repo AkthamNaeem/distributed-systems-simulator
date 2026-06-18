@@ -1,0 +1,32 @@
+import type { ReactNode } from "react";
+import { SiteHeader } from "./SiteHeader";
+
+type PageShellProps = {
+  title: string;
+  subtitle: string;
+  children: ReactNode;
+};
+
+export function PageShell({ title, subtitle, children }: PageShellProps) {
+  return (
+    <>
+      <SiteHeader />
+      <main className="flex-1">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
+          <section className="border-b border-slate-200 pb-6">
+            <p className="text-sm font-semibold text-cyan-700">
+              Distributed Systems Practical Simulator
+            </p>
+            <h1 className="mt-3 text-3xl font-bold tracking-normal text-slate-950 sm:text-4xl">
+              {title}
+            </h1>
+            <p className="mt-4 max-w-3xl text-base leading-8 text-slate-700 sm:text-lg">
+              {subtitle}
+            </p>
+          </section>
+          {children}
+        </div>
+      </main>
+    </>
+  );
+}

@@ -1,65 +1,94 @@
-import Image from "next/image";
+import { ConceptCard } from "@/components/ConceptCard";
+import { PageShell } from "@/components/PageShell";
+
+const simulatorLinks = [
+  {
+    title: "RMI Simulator",
+    explanation:
+      "توضيح كيف يستدعي Client دالة موجودة على Server آخر باستخدام RMI مع Stub و Registry و Serialization.",
+    href: "/rmi-simulator",
+  },
+  {
+    title: "Load Balancer Simulator",
+    explanation:
+      "عرض فكرة توزيع الطلبات على أكثر من Server عند اختلاف السرعات أو زيادة الضغط.",
+    href: "/load-balancer",
+  },
+  {
+    title: "RPC vs Message Passing",
+    explanation:
+      "مقارنة أسلوب الاستدعاء المباشر RPC مع إرسال الرسائل Message Passing بين الخدمات.",
+    href: "/rpc-vs-message-passing",
+  },
+  {
+    title: "Fault Tolerance Lab",
+    explanation:
+      "شرح التعامل مع partial failure وكيف تساعد أفكار مثل Circuit Breaker في تقليل أثر الفشل.",
+    href: "/fault-tolerance",
+  },
+  {
+    title: "Sharding & Replication",
+    explanation:
+      "تقديم الفرق بين تقسيم البيانات Sharding ونسخها Replication لتحسين التوسع والاعتمادية.",
+    href: "/sharding-replication",
+  },
+  {
+    title: "Final Summary",
+    explanation:
+      "تلخيص المفاهيم وربط المحاكيات بمشاكل Distributed Systems التي تظهر في الأنظمة العملية.",
+    href: "/final-summary",
+  },
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <PageShell
+      title="Distributed Systems Practical Simulator"
+      subtitle="واجهة تعليمية جامعية تشرح كيف يتحول برنامج محلي بسيط إلى Distributed System مكون من خدمات وخوادم متعددة."
+    >
+      <section className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-slate-950">فكرة المشروع</h2>
+          <p className="mt-3 leading-8 text-slate-700">
+            يبدأ النظام كبرنامج محلي يستدعي دواله وبياناته داخل نفس العملية. في
+            Distributed Systems تتوزع هذه الأجزاء على أكثر من خدمة أو Server،
+            فيظهر تأثير الشبكة، زمن الاستجابة، وتعطل جزء من النظام دون تعطل
+            باقي الأجزاء.
+          </p>
+          <p className="mt-3 leading-8 text-slate-700">
+            في المراحل القادمة ستوضح المحاكيات مشاكل مثل latency و partial
+            failure واختلاف سرعة الخوادم و network congestion، لكن هذه المرحلة
+            تركز فقط على بناء الصفحات والتنقل بينها.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-6">
+          <h2 className="text-xl font-semibold text-emerald-950">
+            الهدف الأكاديمي
+          </h2>
+          <p className="mt-3 leading-8 text-emerald-900">
+            الهدف ليس بناء بنية تحتية حقيقية، بل تقديم تجربة مرئية بسيطة تساعد
+            الطالب على مناقشة مفاهيم Distributed Systems وفهم لماذا تصبح
+            الأنظمة الموزعة أكثر تعقيدا من البرنامج المحلي.
+          </p>
         </div>
-      </main>
-    </div>
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-xl font-semibold text-slate-950">
+          صفحات المحاكاة
+        </h2>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {simulatorLinks.map((item) => (
+            <ConceptCard
+              key={item.href}
+              title={item.title}
+              explanation={item.explanation}
+              href={item.href}
+            />
+          ))}
+        </div>
+      </section>
+    </PageShell>
   );
 }
