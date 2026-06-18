@@ -5,24 +5,24 @@ export default function RmiSimulatorPage() {
   return (
     <PageShell
       title="RMI Simulator"
-      subtitle="صفحة ثابتة تمهد لمحاكاة Remote Method Invocation بين Client و Server."
+      subtitle="A static page that prepares for a Remote Method Invocation simulation between a Client and a Server."
     >
       <section className="grid gap-4 md:grid-cols-2">
         <ConceptCard
-          title="ما الذي ستحاكيه الصفحة؟"
-          explanation="ستعرض لاحقا رحلة استدعاء دالة بعيدة من Client إلى Server عبر Stub و Registry، ثم رجوع النتيجة بعد Serialization."
+          title="What This Page Will Simulate"
+          explanation="It will later show the path of calling a remote method from a Client to a Server through a Stub and Registry, then returning the result after Serialization."
         />
         <ConceptCard
-          title="المفهوم الذي تثبته"
-          explanation="إثبات أن RMI يخفي تفاصيل الشبكة جزئيا، لكن الاستدعاء يبقى موزعا ويتأثر بالزمن والفشل والاتصال بين العمليات."
+          title="Distributed Systems Concept"
+          explanation="It proves that RMI hides some network details, but the call is still distributed and affected by latency, failure, and communication between processes."
         />
         <ConceptCard
-          title="ما الذي سيتمكن المستخدم من فعله لاحقا؟"
-          explanation="سيختار دالة بعيدة ويرى خطوات البحث في Registry وتجهيز البيانات وإرسال الطلب واستقبال الرد بشكل بصري."
+          title="Later User Action"
+          explanation="The user will choose a remote method and visually follow Registry lookup, data preparation, request sending, and response receiving."
         />
         <ConceptCard
-          title="ملاحظة المرحلة الحالية"
-          explanation="لا توجد أي محاكاة أو منطق تفاعلي الآن. تنفيذ منطق RMI التعليمي سيكون في مرحلة لاحقة."
+          title="Current Phase Note"
+          explanation="There is no simulation or interactive logic now. The educational RMI simulator logic will be implemented in a later phase."
         />
       </section>
     </PageShell>

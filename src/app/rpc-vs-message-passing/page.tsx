@@ -5,24 +5,24 @@ export default function RpcVsMessagePassingPage() {
   return (
     <PageShell
       title="RPC vs Message Passing"
-      subtitle="صفحة ثابتة تقارن بين استدعاء خدمة بشكل مباشر وبين التواصل عبر رسائل."
+      subtitle="A static page comparing direct service calls with communication through messages."
     >
       <section className="grid gap-4 md:grid-cols-2">
         <ConceptCard
-          title="ما الذي ستحاكيه الصفحة؟"
-          explanation="ستعرض لاحقا الفرق بين RPC كاستدعاء يبدو مثل الدالة العادية، و Message Passing كإرسال رسالة بين مكونات مستقلة."
+          title="What This Page Will Simulate"
+          explanation="It will later show the difference between RPC as a call that looks like a normal function call and Message Passing as sending a message between independent components."
         />
         <ConceptCard
-          title="المفهوم الذي تثبته"
-          explanation="إثبات أن طريقة التواصل تؤثر على الترابط بين الخدمات، زمن الاستجابة، وكيفية التعامل مع التعطل الجزئي."
+          title="Distributed Systems Concept"
+          explanation="It proves that the communication style affects coupling between services, latency, and how partial failure is handled."
         />
         <ConceptCard
-          title="ما الذي سيتمكن المستخدم من فعله لاحقا؟"
-          explanation="سيختار نمط التواصل ويرى مسار الطلب أو الرسالة، ثم يقارن وضوح الخطوات والاعتماد بين الطرفين."
+          title="Later User Action"
+          explanation="The user will choose a communication style, view the path of a request or message, and compare the clarity of steps and dependency between both sides."
         />
         <ConceptCard
-          title="ملاحظة المرحلة الحالية"
-          explanation="لا يوجد تنفيذ حقيقي لأي broker مثل RabbitMQ أو Kafka، ولا توجد queues أو منطق رسائل بعد."
+          title="Current Phase Note"
+          explanation="There is no real implementation of any broker such as RabbitMQ or Kafka, and there are no queues or message logic yet."
         />
       </section>
     </PageShell>

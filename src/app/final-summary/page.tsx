@@ -5,24 +5,24 @@ export default function FinalSummaryPage() {
   return (
     <PageShell
       title="Final Summary"
-      subtitle="صفحة ثابتة تجمع مفاهيم المشروع وتربطها بمشاكل Distributed Systems الأساسية."
+      subtitle="A static page that gathers the project concepts and connects them to core Distributed Systems problems."
     >
       <section className="grid gap-4 md:grid-cols-2">
         <ConceptCard
-          title="ما الذي ستلخصه الصفحة؟"
-          explanation="ستلخص لاحقا ما تعلمه المستخدم من RMI و Load Balancing و RPC و Message Passing و Fault Tolerance و Sharding و Replication."
+          title="What This Page Will Summarize"
+          explanation="It will later summarize what the user learned from RMI, Load Balancing, RPC, Message Passing, Fault Tolerance, Sharding, and Replication."
         />
         <ConceptCard
-          title="المفهوم الذي تثبته"
-          explanation="إثبات أن النظام الموزع ليس مجرد عدة Servers، بل مجموعة قرارات حول التواصل، البيانات، الفشل، والزمن."
+          title="Distributed Systems Concept"
+          explanation="It proves that a Distributed System is not only several Servers. It is a set of decisions about communication, data, failure, and time."
         />
         <ConceptCard
-          title="ما الذي سيتمكن المستخدم من فعله لاحقا؟"
-          explanation="سيستخدم هذه الصفحة لمراجعة النتائج ومقارنة المفاهيم قبل مناقشة المشروع أو عرضه في الجامعة."
+          title="Later User Action"
+          explanation="The user will use this page to review results and compare concepts before discussing or presenting the project."
         />
         <ConceptCard
-          title="ملاحظة المرحلة الحالية"
-          explanation="هذه الصفحة لا تجمع نتائج فعلية من المحاكيات بعد، لأن منطق المحاكاة سيتم تنفيذه في مرحلة لاحقة."
+          title="Current Phase Note"
+          explanation="This page does not collect real results from the simulators yet because simulator logic will be implemented in a later phase."
         />
       </section>
     </PageShell>

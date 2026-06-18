@@ -5,24 +5,24 @@ export default function ShardingReplicationPage() {
   return (
     <PageShell
       title="Sharding & Replication"
-      subtitle="صفحة ثابتة تشرح الفرق بين تقسيم البيانات ونسخها داخل نظام موزع."
+      subtitle="A static page explaining the difference between splitting data and copying it inside a Distributed System."
     >
       <section className="grid gap-4 md:grid-cols-2">
         <ConceptCard
-          title="ما الذي ستحاكيه الصفحة؟"
-          explanation="ستعرض لاحقا كيف يتم توزيع البيانات على Shards مختلفة، وكيف تساعد Replication في وجود نسخ احتياطية للقراءة أو الاستمرارية."
+          title="What This Page Will Simulate"
+          explanation="It will later show how data is distributed across different Shards and how Replication creates extra copies for reading or continuity."
         />
         <ConceptCard
-          title="المفهوم الذي تثبته"
-          explanation="إثبات أن Sharding يعالج التوسع بتقسيم البيانات، بينما Replication يعالج الاعتمادية وتوفر النسخ، ولكل منهما trade-offs."
+          title="Distributed Systems Concept"
+          explanation="It proves that Sharding handles scalability by splitting data, while Replication supports reliability and availability of copies. Each approach has trade-offs."
         />
         <ConceptCard
-          title="ما الذي سيتمكن المستخدم من فعله لاحقا؟"
-          explanation="سيشاهد أين تذهب السجلات عند التقسيم، وكيف تظهر نسخة مكررة من البيانات في أكثر من عقدة."
+          title="Later User Action"
+          explanation="The user will see where records go during Sharding and how replicated data appears on more than one node."
         />
         <ConceptCard
-          title="ملاحظة المرحلة الحالية"
-          explanation="لا توجد قاعدة بيانات أو تخزين حقيقي أو حالة محاكاة. المحتوى الحالي ثابت ومخصص لهيكل الصفحة فقط."
+          title="Current Phase Note"
+          explanation="There is no real database, storage, or simulation state. The current content is static and only supports the page skeleton."
         />
       </section>
     </PageShell>

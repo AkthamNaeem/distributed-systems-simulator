@@ -5,24 +5,24 @@ export default function FaultTolerancePage() {
   return (
     <PageShell
       title="Fault Tolerance Lab"
-      subtitle="صفحة ثابتة تمهد لفهم كيف يستمر النظام الموزع عندما يفشل جزء منه."
+      subtitle="A static page introducing how a Distributed System can continue when one part fails."
     >
       <section className="grid gap-4 md:grid-cols-2">
         <ConceptCard
-          title="ما الذي ستحاكيه الصفحة؟"
-          explanation="ستعرض لاحقا سيناريو partial failure حيث يتعطل Server أو يصبح بطيئا بينما تبقى أجزاء أخرى من النظام تعمل."
+          title="What This Page Will Simulate"
+          explanation="It will later show a partial failure scenario where a Server fails or becomes slow while other parts of the system continue working."
         />
         <ConceptCard
-          title="المفهوم الذي تثبته"
-          explanation="إثبات أن Fault Tolerance لا يعني منع الفشل، بل تقليل أثره باستخدام أفكار مثل retry المحدود و Circuit Breaker ضمن نطاق المحاضرة."
+          title="Distributed Systems Concept"
+          explanation="It proves that Fault Tolerance does not mean preventing failure. It means reducing its impact using lecture-scope ideas such as limited retry and Circuit Breaker."
         />
         <ConceptCard
-          title="ما الذي سيتمكن المستخدم من فعله لاحقا؟"
-          explanation="سيلاحظ كيف يتغير سلوك النظام عند فشل خدمة، وكيف يمكن عزل الفشل بدلا من نشره إلى كل الطلبات."
+          title="Later User Action"
+          explanation="The user will observe how system behavior changes when a service fails and how failure can be isolated instead of spreading to every request."
         />
         <ConceptCard
-          title="ملاحظة المرحلة الحالية"
-          explanation="لا توجد failure toggles أو timers أو منطق retry الآن. هذه الصفحة تعرض الهيكل والمحتوى فقط."
+          title="Current Phase Note"
+          explanation="There are no failure toggles, timers, or retry logic now. This page shows only the structure and content."
         />
       </section>
     </PageShell>

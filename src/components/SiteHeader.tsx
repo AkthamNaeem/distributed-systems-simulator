@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 const navLinks = [
-  { href: "/", label: "الرئيسية" },
+  { href: "/", label: "Home" },
   { href: "/rmi-simulator", label: "RMI Simulator" },
   { href: "/load-balancer", label: "Load Balancer" },
   { href: "/rpc-vs-message-passing", label: "RPC vs Message Passing" },
@@ -20,7 +20,7 @@ export function SiteHeader() {
         >
           Distributed Systems Simulator
         </Link>
-        <nav aria-label="التنقل الرئيسي">
+        <nav aria-label="Primary navigation">
           <ul className="flex flex-wrap gap-2 text-sm font-medium text-slate-700">
             {navLinks.map((link) => (
               <li key={link.href}>

@@ -12,9 +12,7 @@ export function ConceptCard({ title, explanation, href }: ConceptCardProps) {
       <h3 className="text-lg font-semibold text-slate-950">{title}</h3>
       <p className="mt-3 leading-7 text-slate-700">{explanation}</p>
       {href ? (
-        <p className="mt-4 text-sm font-semibold text-cyan-700">
-          الانتقال إلى الصفحة
-        </p>
+        <p className="mt-4 text-sm font-semibold text-cyan-700">Open page</p>
       ) : null}
     </div>
   );

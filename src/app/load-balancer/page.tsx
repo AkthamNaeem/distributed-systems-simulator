@@ -5,24 +5,24 @@ export default function LoadBalancerPage() {
   return (
     <PageShell
       title="Load Balancer Simulator"
-      subtitle="صفحة ثابتة تشرح فكرة توزيع الطلبات على عدة خوادم بدلا من الاعتماد على Server واحد."
+      subtitle="A static page explaining the idea of distributing requests across several Servers instead of depending on one Server."
     >
       <section className="grid gap-4 md:grid-cols-2">
         <ConceptCard
-          title="ما الذي ستحاكيه الصفحة؟"
-          explanation="ستعرض لاحقا كيف يمر الطلب عبر Load Balancer ثم يوزع على Servers بسرعات مختلفة وتحت ضغط مختلف."
+          title="What This Page Will Simulate"
+          explanation="It will later show how a request passes through a Load Balancer and is distributed to Servers with different speeds and different levels of load."
         />
         <ConceptCard
-          title="المفهوم الذي تثبته"
-          explanation="إثبات أن توزيع الحمل يقلل الضغط على الخادم الواحد، لكنه لا يلغي مشكلات latency أو network congestion أو اختلاف أداء الخوادم."
+          title="Distributed Systems Concept"
+          explanation="It proves that load distribution reduces pressure on a single Server, but it does not remove latency, network congestion, or different server speeds."
         />
         <ConceptCard
-          title="ما الذي سيتمكن المستخدم من فعله لاحقا؟"
-          explanation="سيجرب إرسال طلبات متعددة ومقارنة توزيعها بين الخوادم بطريقة مرئية وبسيطة."
+          title="Later User Action"
+          explanation="The user will try sending multiple requests and compare how they are distributed between Servers in a simple visual way."
         />
         <ConceptCard
-          title="ملاحظة المرحلة الحالية"
-          explanation="هذه الصفحة هي هيكل تعليمي فقط. لا توجد خوارزميات توزيع، مؤقتات، أو طلبات وهمية في هذه المرحلة."
+          title="Current Phase Note"
+          explanation="This page is only an educational skeleton. There are no distribution algorithms, timers, or fake requests in this phase."
         />
       </section>
     </PageShell>

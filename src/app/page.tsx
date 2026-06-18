@@ -5,37 +5,37 @@ const simulatorLinks = [
   {
     title: "RMI Simulator",
     explanation:
-      "توضيح كيف يستدعي Client دالة موجودة على Server آخر باستخدام RMI مع Stub و Registry و Serialization.",
+      "Shows how a Client calls a method on another Server through RMI using a Stub, Registry, and Serialization.",
     href: "/rmi-simulator",
   },
   {
     title: "Load Balancer Simulator",
     explanation:
-      "عرض فكرة توزيع الطلبات على أكثر من Server عند اختلاف السرعات أو زيادة الضغط.",
+      "Introduces how requests can be distributed across multiple Servers when speeds differ or traffic increases.",
     href: "/load-balancer",
   },
   {
     title: "RPC vs Message Passing",
     explanation:
-      "مقارنة أسلوب الاستدعاء المباشر RPC مع إرسال الرسائل Message Passing بين الخدمات.",
+      "Compares direct RPC-style calls with Message Passing between independent services.",
     href: "/rpc-vs-message-passing",
   },
   {
     title: "Fault Tolerance Lab",
     explanation:
-      "شرح التعامل مع partial failure وكيف تساعد أفكار مثل Circuit Breaker في تقليل أثر الفشل.",
+      "Explains partial failure and how ideas such as Circuit Breaker reduce the effect of failure.",
     href: "/fault-tolerance",
   },
   {
     title: "Sharding & Replication",
     explanation:
-      "تقديم الفرق بين تقسيم البيانات Sharding ونسخها Replication لتحسين التوسع والاعتمادية.",
+      "Presents the difference between Sharding data and Replication for scalability and reliability.",
     href: "/sharding-replication",
   },
   {
     title: "Final Summary",
     explanation:
-      "تلخيص المفاهيم وربط المحاكيات بمشاكل Distributed Systems التي تظهر في الأنظمة العملية.",
+      "Summarizes the concepts and connects the simulators to Distributed Systems problems found in practical systems.",
     href: "/final-summary",
   },
 ];
@@ -44,39 +44,42 @@ export default function Home() {
   return (
     <PageShell
       title="Distributed Systems Practical Simulator"
-      subtitle="واجهة تعليمية جامعية تشرح كيف يتحول برنامج محلي بسيط إلى Distributed System مكون من خدمات وخوادم متعددة."
+      subtitle="An academic educational interface that explains how a simple local program becomes a Distributed System made of multiple services and servers."
     >
       <section className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-950">فكرة المشروع</h2>
+          <h2 className="text-xl font-semibold text-slate-950">Project Idea</h2>
           <p className="mt-3 leading-8 text-slate-700">
-            يبدأ النظام كبرنامج محلي يستدعي دواله وبياناته داخل نفس العملية. في
-            Distributed Systems تتوزع هذه الأجزاء على أكثر من خدمة أو Server،
-            فيظهر تأثير الشبكة، زمن الاستجابة، وتعطل جزء من النظام دون تعطل
-            باقي الأجزاء.
+            A system often starts as one local program that calls its functions
+            and reads its data inside the same process. In Distributed Systems,
+            those parts are separated across multiple services and Servers, so
+            the effects of the network, response time, and partial failure
+            become visible.
           </p>
           <p className="mt-3 leading-8 text-slate-700">
-            في المراحل القادمة ستوضح المحاكيات مشاكل مثل latency و partial
-            failure واختلاف سرعة الخوادم و network congestion، لكن هذه المرحلة
-            تركز فقط على بناء الصفحات والتنقل بينها.
+            In later phases, the simulators will demonstrate problems such as
+            latency, partial failure, different server speeds, and network
+            congestion. This phase only provides the page structure and
+            navigation between concepts.
           </p>
         </div>
 
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-6">
           <h2 className="text-xl font-semibold text-emerald-950">
-            الهدف الأكاديمي
+            Academic Goal
           </h2>
           <p className="mt-3 leading-8 text-emerald-900">
-            الهدف ليس بناء بنية تحتية حقيقية، بل تقديم تجربة مرئية بسيطة تساعد
-            الطالب على مناقشة مفاهيم Distributed Systems وفهم لماذا تصبح
-            الأنظمة الموزعة أكثر تعقيدا من البرنامج المحلي.
+            The goal is not to build real infrastructure. It is to provide a
+            simple visual learning experience that helps students discuss
+            Distributed Systems concepts and understand why distributed systems
+            are more complex than a local program.
           </p>
         </div>
       </section>
 
       <section>
         <h2 className="mb-4 text-xl font-semibold text-slate-950">
-          صفحات المحاكاة
+          Simulator Pages
         </h2>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {simulatorLinks.map((item) => (
