@@ -3,948 +3,428 @@
 import { useState } from "react";
 import { PageShell } from "@/components/PageShell";
 
-type ReplicationMode = "none" | "active" | "passive";
-type LogTone = "normal" | "success" | "warning" | "error";
+type ShardKey = "userId" | "region";
+type ReplicationMode = "active" | "passive";
+type Tone = "normal" | "success" | "warning" | "error";
+type ShardPhase = "idle" | "incoming" | "decision" | "shard";
+type ReplicaPhase = "idle" | "client" | "primary" | "replicas" | "complete";
+type Concept = "Data Sharding" | "Shard Key" | "Active Replication" | "Passive Replication";
 
-type StoredRecord = {
-  id: number;
-  name: string;
+type RecordItem = { id: number; name: string; region: string };
+type Shard = { id: number; healthy: boolean; records: RecordItem[] };
+type Replica = { id: number; role: "Primary" | "Backup"; healthy: boolean; writes: string[] };
+type EventItem = { id: string; text: string; tone: Tone };
+
+const shardNames = ["Shard A", "Shard B", "Shard C"];
+const regions = ["Americas", "Europe", "Asia"];
+const initialShards: Shard[] = [0, 1, 2].map((id) => ({ id, healthy: true, records: [] }));
+const initialReplicas: Replica[] = [
+  { id: 0, role: "Primary", healthy: true, writes: [] },
+  { id: 1, role: "Backup", healthy: true, writes: [] },
+  { id: 2, role: "Backup", healthy: true, writes: [] },
+];
+const initialEvents: EventItem[] = [
+  { id: "ready", text: "Simulator ready. Add a record to trace its route.", tone: "normal" },
+];
+
+const explanations: Record<Concept, { proven: string; demonstrates: string; matters: string }> = {
+  "Data Sharding": {
+    proven: "Horizontal partitioning",
+    demonstrates: "Records are split across storage nodes instead of being kept in one place.",
+    matters: "One server does not need to store or process all of the data.",
+  },
+  "Shard Key": {
+    proven: "Deterministic distribution",
+    demonstrates: "The selected key always produces a traceable target shard.",
+    matters: "A poor shard key can overload one node while others remain underused.",
+  },
+  "Active Replication": {
+    proven: "Replicated execution",
+    demonstrates: "Every healthy replica receives and processes the same write in parallel.",
+    matters: "Multiple current copies can keep service available after one replica fails.",
+  },
+  "Passive Replication": {
+    proven: "Primary-backup replication",
+    demonstrates: "The primary commits first, then sends its new state to healthy backups.",
+    matters: "The recovery model is simple, but the primary remains central to writes.",
+  },
 };
-
-type Shard = {
-  id: number;
-  healthy: boolean;
-  records: StoredRecord[];
-  replicaRecords: StoredRecord[];
-  pendingReplicaRecords: StoredRecord[];
-};
-
-type LogEntry = {
-  id: string;
-  text: string;
-  tone?: LogTone;
-};
-
-const shardCount = 3;
-
-const initialShards: Shard[] = [
-  { id: 0, healthy: true, records: [], replicaRecords: [], pendingReplicaRecords: [] },
-  { id: 1, healthy: true, records: [], replicaRecords: [], pendingReplicaRecords: [] },
-  { id: 2, healthy: true, records: [], replicaRecords: [], pendingReplicaRecords: [] },
-];
-
-const mockRecords: StoredRecord[] = [
-  { id: 101, name: "Ada" },
-  { id: 102, name: "Grace" },
-  { id: 103, name: "Linus" },
-  { id: 104, name: "Barbara" },
-];
-
-const replicationModes: { id: ReplicationMode; label: string }[] = [
-  { id: "none", label: "No Replication" },
-  { id: "active", label: "Active Replication" },
-  { id: "passive", label: "Passive Replication" },
-];
-
-const conceptCards = [
-  {
-    title: "Data Sharding",
-    explanation:
-      "Splits data across multiple nodes so one server does not store everything.",
-  },
-  {
-    title: "Shard Key",
-    explanation: "A value used to decide which shard owns a record.",
-  },
-  {
-    title: "Active Replication",
-    explanation: "Writes are applied to multiple replicas immediately.",
-  },
-  {
-    title: "Passive Replication",
-    explanation:
-      "A primary node receives writes first, then updates backup replicas later.",
-  },
-  {
-    title: "High Availability",
-    explanation:
-      "The system can continue serving requests when one component fails.",
-  },
-  {
-    title: "Fault Tolerance",
-    explanation: "The system manages failures instead of completely stopping.",
-  },
-];
-
-const proofItems = [
-  "Sharding distributes data across multiple storage nodes.",
-  "A shard key determines where each record belongs.",
-  "Failed shards can make part of the data unavailable.",
-  "Replication keeps additional copies of data.",
-  "Active replication updates copies immediately.",
-  "Passive replication updates backup copies after the primary.",
-  "Replicas can improve availability during failure.",
-  "Distributed storage must handle partial failure.",
-];
 
 const guide = {
   howToUse: [
-    "Insert records and read records to see the shard key calculation.",
-    "Switch between no replication, active replication, and passive replication.",
-    "Sync passive replicas, then fail shards or replicas to test availability.",
+    "Choose a shard key, then add one record or a short burst.",
+    "Switch replication mode and simulate a write to compare packet paths.",
+    "Fail and recover a selected shard or replica while watching availability.",
   ],
   observe: [
-    "The shard key decides which shard owns each record.",
-    "Active replication copies immediately while passive replication waits for sync.",
-    "Replicas can serve reads when a primary shard fails.",
+    "Each record pauses at the shard-key decision before reaching its shard.",
+    "Active writes fan out; passive writes commit at the primary before backups.",
+    "Healthy copies preserve service while failed nodes create degraded states.",
   ],
-  concepts: [
-    "Shard key, data sharding, active replication, and passive replication.",
-    "High availability through replicated copies.",
-    "Fault tolerance during shard or replica failure.",
-  ],
+  concepts: ["Data sharding and deterministic shard keys.", "Active and passive replication.", "High availability and fault tolerance."],
 };
+
+const wait = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 export default function ShardingReplicationPage() {
   const [shards, setShards] = useState<Shard[]>(initialShards);
-  const [replicationMode, setReplicationMode] =
-    useState<ReplicationMode>("none");
-  const [selectedRecordId, setSelectedRecordId] = useState(mockRecords[0].id);
-  const [recordName, setRecordName] = useState(mockRecords[0].name);
-  const [readRecordId, setReadRecordId] = useState(mockRecords[0].id);
-  const [replicaFailed, setReplicaFailed] = useState(false);
-  const [routeMessage, setRouteMessage] = useState(
-    "Insert or read a record to see the shard key calculation.",
-  );
-  const [readResult, setReadResult] = useState("No read request sent yet.");
-  const [logs, setLogs] = useState<LogEntry[]>([
-    {
-      id: "initial",
-      text: "Simulator ready. Shard key rule is recordId % shardCount.",
-      tone: "normal",
-    },
-  ]);
+  const [replicas, setReplicas] = useState<Replica[]>(initialReplicas);
+  const [shardKey, setShardKey] = useState<ShardKey>("userId");
+  const [replicationMode, setReplicationMode] = useState<ReplicationMode>("active");
+  const [shardPhase, setShardPhase] = useState<ShardPhase>("idle");
+  const [replicaPhase, setReplicaPhase] = useState<ReplicaPhase>("idle");
+  const [activeRecord, setActiveRecord] = useState<RecordItem | null>(null);
+  const [targetShard, setTargetShard] = useState<number | null>(null);
+  const [nextRecordId, setNextRecordId] = useState(104);
+  const [writeNumber, setWriteNumber] = useState(1);
+  const [latestDecision, setLatestDecision] = useState("No record routed yet.");
+  const [replicationStatus, setReplicationStatus] = useState("Ready for a replicated write.");
+  const [events, setEvents] = useState<EventItem[]>(initialEvents);
+  const [busy, setBusy] = useState(false);
+  const [failureType, setFailureType] = useState<"shard" | "replica">("shard");
+  const [failureId, setFailureId] = useState(0);
+  const [concept, setConcept] = useState<Concept>("Data Sharding");
 
-  const selectedShardOne = shards.find((shard) => shard.id === 1);
+  const healthyShards = shards.filter((shard) => shard.healthy).length;
+  const healthyReplicas = replicas.filter((replica) => replica.healthy).length;
+  const primaryHealthy = replicas[0].healthy;
+  const totalRecords = shards.reduce((total, shard) => total + shard.records.length, 0);
+  const availability = getAvailability(healthyShards, healthyReplicas, primaryHealthy, replicationMode);
+  const selectedFailed = failureType === "shard" ? !shards[failureId]?.healthy : !replicas[failureId]?.healthy;
+  const explanation = explanations[concept];
 
-  function addLogs(entries: Omit<LogEntry, "id">[]) {
-    const timestamp = Date.now();
-    const nextLogs = entries.map((entry, index) => ({
-      ...entry,
-      id: `${timestamp}-${index}-${entry.text}`,
-    }));
-
-    setLogs((currentLogs) => [...nextLogs.reverse(), ...currentLogs].slice(0, 12));
+  function log(text: string, tone: Tone = "normal") {
+    setEvents((current) => [{ id: `${Date.now()}-${text}`, text, tone }, ...current].slice(0, 10));
   }
 
-  function selectMockRecord(recordId: number) {
-    const record = mockRecords.find((item) => item.id === recordId);
-
-    setSelectedRecordId(recordId);
-
-    if (record) {
-      setRecordName(record.name);
+  function getRoute(record: RecordItem) {
+    if (shardKey === "userId") {
+      const target = record.id % 3;
+      return { target, decision: `userId ${record.id} → ${record.id} % 3 = ${target} → ${shardNames[target]}` };
     }
+    const target = regions.indexOf(record.region);
+    return { target, decision: `region “${record.region}” → mapping ${target} → ${shardNames[target]}` };
   }
 
-  function changeReplicationMode(nextMode: ReplicationMode) {
-    setReplicationMode(nextMode);
-    setShards((currentShards) =>
-      currentShards.map((shard) => {
-        if (nextMode === "none") {
-          return { ...shard, replicaRecords: [], pendingReplicaRecords: [] };
-        }
+  async function routeRecord(record: RecordItem) {
+    const route = getRoute(record);
+    setActiveRecord(record);
+    setTargetShard(route.target);
+    setLatestDecision(`Record #${record.id} is entering the router…`);
+    setConcept("Shard Key");
+    setShardPhase("incoming");
+    log(`Record #${record.id} used ${shardKey} as its shard key.`);
+    await wait(450);
+    setShardPhase("decision");
+    setLatestDecision(route.decision);
+    await wait(650);
+    setShardPhase("shard");
 
-        if (nextMode === "active") {
-          return {
-            ...shard,
-            replicaRecords: shard.records,
-            pendingReplicaRecords: [],
-          };
-        }
-
-        return {
-          ...shard,
-          replicaRecords: [],
-          pendingReplicaRecords: shard.records,
-        };
-      }),
-    );
-
-    const modeLabel = getReplicationLabel(nextMode);
-    addLogs([
-      {
-        text:
-          nextMode === "active"
-            ? "Active Replication selected. Future writes update primary and replica immediately."
-            : nextMode === "passive"
-              ? "Passive Replication selected. Replica copies wait for manual sync."
-              : "No Replication selected. Data is stored only on the target shard.",
-        tone: nextMode === "none" ? "warning" : "success",
-      },
-      { text: `Replication mode changed to ${modeLabel}.`, tone: "normal" },
-    ]);
-  }
-
-  function insertRecord() {
-    const record: StoredRecord = {
-      id: selectedRecordId,
-      name: recordName.trim() || `User #${selectedRecordId}`,
-    };
-    const targetShardId = getShardId(record.id);
-    const calculation = `Shard key calculation: ${record.id} % ${shardCount} = ${targetShardId}`;
-    const targetShard = shards.find((shard) => shard.id === targetShardId);
-
-    setRouteMessage(calculation);
-
-    if (!targetShard?.healthy) {
-      addLogs([
-        { text: calculation, tone: "normal" },
-        {
-          text: "Primary shard is unavailable. Write cannot complete without a healthy target shard.",
-          tone: "error",
-        },
-      ]);
-      return;
+    const destination = shards[route.target];
+    if (!destination.healthy) {
+      setLatestDecision(`${route.decision}. Route blocked: ${shardNames[route.target]} is down.`);
+      log(`${shardNames[route.target]} is down; Record #${record.id} could not be stored.`, "error");
+    } else {
+      setShards((current) => current.map((shard) => shard.id === route.target ? { ...shard, records: [...shard.records, record] } : shard));
+      setLatestDecision(route.decision);
+      log(`Record #${record.id} routed to ${shardNames[route.target]}.`, "success");
     }
+    await wait(500);
+    setShardPhase("idle");
+  }
 
-    setShards((currentShards) =>
-      currentShards.map((shard) => {
-        if (shard.id !== targetShardId) {
-          return shard;
-        }
+  async function addRecords(count: number) {
+    if (busy) return;
+    setBusy(true);
+    for (let index = 0; index < count; index += 1) {
+      const id = nextRecordId + index;
+      await routeRecord({ id, name: `Student ${id}`, region: regions[id % 3] });
+      if (index < count - 1) await wait(160);
+    }
+    setNextRecordId((current) => current + count);
+    setBusy(false);
+  }
 
-        const records = upsertRecord(shard.records, record);
+  function changeShardKey(value: ShardKey) {
+    setShardKey(value);
+    setConcept("Shard Key");
+    setLatestDecision(value === "userId" ? "Rule changed: userId % 3 selects the shard." : "Rule changed: region maps to Americas=A, Europe=B, Asia=C.");
+    log(`Shard key changed to ${value}.`, "warning");
+  }
 
-        if (replicationMode === "active") {
-          return {
-            ...shard,
-            records,
-            replicaRecords: upsertRecord(shard.replicaRecords, record),
-            pendingReplicaRecords: removePendingRecord(
-              shard.pendingReplicaRecords,
-              record.id,
-            ),
-          };
-        }
+  function changeReplicationMode(mode: ReplicationMode) {
+    setReplicationMode(mode);
+    setConcept(mode === "active" ? "Active Replication" : "Passive Replication");
+    setReplicationStatus(mode === "active" ? "Next write will fan out to every healthy replica." : "Next write will commit on Primary, then copy to backups.");
+    log(`${mode === "active" ? "Active" : "Passive"} Replication selected.`);
+  }
 
-        if (replicationMode === "passive") {
-          return {
-            ...shard,
-            records,
-            pendingReplicaRecords: upsertRecord(
-              shard.pendingReplicaRecords,
-              record,
-            ),
-          };
-        }
-
-        return { ...shard, records };
-      }),
-    );
-
-    const recordLabel = getRecordLabel(record);
-    const nextLogs: Omit<LogEntry, "id">[] = [
-      { text: calculation, tone: "normal" },
-      {
-        text: `Inserted ${recordLabel} into Shard ${targetShardId}`,
-        tone: "success",
-      },
-    ];
+  async function simulateWrite() {
+    if (busy) return;
+    setBusy(true);
+    const label = `Write W${writeNumber}`;
+    setReplicaPhase("client");
+    setReplicationStatus(`${label} left the client.`);
+    await wait(450);
 
     if (replicationMode === "active") {
-      nextLogs.push({
-        text: `Active replication copied ${recordLabel} to replica`,
-        tone: "success",
-      });
-    }
-
-    if (replicationMode === "passive") {
-      nextLogs.push({
-        text: "Passive replica is waiting for sync",
-        tone: "warning",
-      });
-    }
-
-    addLogs(nextLogs);
-  }
-
-  function readRecord() {
-    const targetShardId = getShardId(readRecordId);
-    const calculation = `Shard key calculation: ${readRecordId} % ${shardCount} = ${targetShardId}`;
-    const targetShard = shards.find((shard) => shard.id === targetShardId);
-    const primaryRecord = targetShard?.records.find(
-      (record) => record.id === readRecordId,
-    );
-    const replicaRecord = targetShard?.replicaRecords.find(
-      (record) => record.id === readRecordId,
-    );
-
-    setRouteMessage(calculation);
-
-    if (targetShard?.healthy) {
-      if (primaryRecord) {
-        const message = `Read ${getRecordLabel(primaryRecord)} from primary Shard ${targetShardId}`;
-        setReadResult(message);
-        addLogs([
-          { text: calculation, tone: "normal" },
-          { text: message, tone: "success" },
-        ]);
-        return;
+      setConcept("Active Replication");
+      setReplicaPhase("replicas");
+      if (healthyReplicas === 0) {
+        setReplicationStatus(`${label} failed: every replica is down.`);
+        log("Active replication failed because every replica is down.", "error");
+      } else {
+        setReplicationStatus(`${label} is moving to all ${healthyReplicas} healthy replicas in parallel.`);
+        await wait(800);
+        setReplicas((current) => current.map((replica) => replica.healthy ? { ...replica, writes: [...replica.writes, label] } : replica));
+        setReplicationStatus(`${label} processed by all healthy replicas${healthyReplicas < 3 ? "; service remains degraded" : ""}.`);
+        log("Active replication sent the update to all healthy replicas.", healthyReplicas < 3 ? "warning" : "success");
       }
-
-      setReadResult("Record not found");
-      addLogs([
-        { text: calculation, tone: "normal" },
-        { text: "Record not found", tone: "warning" },
-      ]);
-      return;
+    } else {
+      setConcept("Passive Replication");
+      setReplicaPhase("primary");
+      if (!primaryHealthy) {
+        setReplicationStatus(`${label} rejected: Primary is down, so this simple model cannot accept writes.`);
+        log("Passive write failed because Primary is down.", "error");
+      } else {
+        setReplicationStatus(`${label} is committing on Primary…`);
+        await wait(700);
+        setReplicas((current) => current.map((replica) => replica.id === 0 ? { ...replica, writes: [...replica.writes, label] } : replica));
+        setReplicationStatus(`${label} committed. Primary is now copying it to backups…`);
+        setReplicaPhase("replicas");
+        await wait(750);
+        setReplicas((current) => current.map((replica) => replica.id > 0 && replica.healthy ? { ...replica, writes: [...replica.writes, label] } : replica));
+        const healthyBackups = replicas.filter((replica) => replica.id > 0 && replica.healthy).length;
+        setReplicationStatus(`${label} committed on Primary and copied to ${healthyBackups} healthy backup${healthyBackups === 1 ? "" : "s"}.`);
+        log("Passive replication committed on Primary, then copied to healthy backups.", healthyBackups < 2 ? "warning" : "success");
+      }
     }
 
-    if (replicationMode !== "none" && !replicaFailed && replicaRecord) {
-      const message = `Primary shard failed. Read served from replica: ${getRecordLabel(replicaRecord)}`;
-      setReadResult(message);
-      addLogs([
-        { text: calculation, tone: "normal" },
-        { text: "Primary shard failed. Read served from replica", tone: "success" },
-      ]);
-      return;
-    }
-
-    if (replicationMode === "none") {
-      const message =
-        "Read failed because the primary shard is unavailable and replication is disabled.";
-      setReadResult(message);
-      addLogs([
-        { text: calculation, tone: "normal" },
-        { text: "Read failed because primary and replica are unavailable", tone: "error" },
-      ]);
-      return;
-    }
-
-    if (replicaFailed) {
-      const message =
-        "Read failed because primary and replica are unavailable.";
-      setReadResult(message);
-      addLogs([
-        { text: calculation, tone: "normal" },
-        { text: "Read failed because primary and replica are unavailable", tone: "error" },
-      ]);
-      return;
-    }
-
-    const message =
-      "Primary shard failed and the replica does not contain this record.";
-    setReadResult(message);
-    addLogs([
-      { text: calculation, tone: "normal" },
-      { text: message, tone: "error" },
-    ]);
+    setReplicaPhase("complete");
+    await wait(500);
+    setReplicaPhase("idle");
+    setWriteNumber((current) => current + 1);
+    setBusy(false);
   }
 
-  function syncPassiveReplicas() {
-    if (replicationMode !== "passive") {
-      addLogs([
-        {
-          text: "Passive sync is only available in Passive Replication mode.",
-          tone: "warning",
-        },
-      ]);
-      return;
+  function toggleSelectedNode() {
+    if (failureType === "shard") {
+      const wasHealthy = shards[failureId].healthy;
+      setShards((current) => current.map((shard) => shard.id === failureId ? { ...shard, healthy: !shard.healthy } : shard));
+      log(`${shardNames[failureId]} ${wasHealthy ? "failed; requests for its data are degraded" : "recovered and can receive records again"}.`, wasHealthy ? "error" : "success");
+      setConcept("Data Sharding");
+    } else {
+      const wasHealthy = replicas[failureId].healthy;
+      setReplicas((current) => current.map((replica) => replica.id === failureId ? { ...replica, healthy: !replica.healthy } : replica));
+      log(`Replica ${failureId + 1} ${wasHealthy ? "failed" : "recovered"}.`, wasHealthy ? "error" : "success");
+      setConcept(replicationMode === "active" ? "Active Replication" : "Passive Replication");
     }
-
-    const syncedCount = shards.reduce(
-      (count, shard) => count + shard.pendingReplicaRecords.length,
-      0,
-    );
-
-    setShards((currentShards) =>
-      currentShards.map((shard) => {
-        return {
-          ...shard,
-          replicaRecords: shard.records,
-          pendingReplicaRecords: [],
-        };
-      }),
-    );
-
-    addLogs([
-      {
-        text:
-          syncedCount === 0
-            ? "Passive replicas already match their primary shards."
-            : `Passive replication synced ${syncedCount} pending record ${getCopyWord(syncedCount)}.`,
-        tone: "success",
-      },
-    ]);
   }
 
-  function toggleShardOneFailure() {
-    const nextHealthy = !(selectedShardOne?.healthy ?? true);
-
-    setShards((currentShards) =>
-      currentShards.map((shard) =>
-        shard.id === 1 ? { ...shard, healthy: nextHealthy } : shard,
-      ),
-    );
-
-    addLogs([
-      {
-        text: nextHealthy
-          ? "Shard 1 recovered and can receive reads and writes again."
-          : "Shard 1 failed. Writes to Shard 1 are blocked.",
-        tone: nextHealthy ? "success" : "error",
-      },
-    ]);
-  }
-
-  function toggleReplicaFailure() {
-    const nextReplicaFailed = !replicaFailed;
-
-    setReplicaFailed(nextReplicaFailed);
-    addLogs([
-      {
-        text: nextReplicaFailed
-          ? "Replica failure enabled. Replica reads are unavailable."
-          : "Replica recovered. Replica reads are available again.",
-        tone: nextReplicaFailed ? "error" : "success",
-      },
-    ]);
-  }
-
-  function resetStorage() {
+  function resetSimulation() {
     setShards(initialShards);
-    setReplicationMode("none");
-    setSelectedRecordId(mockRecords[0].id);
-    setRecordName(mockRecords[0].name);
-    setReadRecordId(mockRecords[0].id);
-    setReplicaFailed(false);
-    setRouteMessage("Insert or read a record to see the shard key calculation.");
-    setReadResult("No read request sent yet.");
-    setLogs([
-      {
-        id: "reset",
-        text: "Reset Storage cleared records, statuses, logs, and replication state.",
-        tone: "normal",
-      },
-    ]);
+    setReplicas(initialReplicas);
+    setShardKey("userId");
+    setReplicationMode("active");
+    setShardPhase("idle");
+    setReplicaPhase("idle");
+    setActiveRecord(null);
+    setTargetShard(null);
+    setNextRecordId(104);
+    setWriteNumber(1);
+    setLatestDecision("No record routed yet.");
+    setReplicationStatus("Ready for a replicated write.");
+    setEvents([{ id: `reset-${Date.now()}`, text: "Simulation reset. All nodes are healthy and storage is empty.", tone: "normal" }]);
+    setFailureType("shard");
+    setFailureId(0);
+    setConcept("Data Sharding");
   }
 
   return (
     <PageShell
-      title="Sharding & Replication Simulator"
-      subtitle="This simulator shows how distributed storage divides records across shards using a shard key, and how replication keeps extra copies of data to improve availability and fault tolerance."
+      title="Sharding & Replication"
+      subtitle="Sharding splits data across nodes using a shard key. Replication keeps copies so the system can stay available during failure."
       guide={guide}
     >
-      <section className="grid gap-4 lg:grid-cols-3">
-        {shards.map((shard) => (
-          <ShardCard
-            key={shard.id}
-            shard={shard}
-            replicationMode={replicationMode}
-            replicaFailed={replicaFailed}
-          />
+      <div className="flex flex-wrap gap-2" aria-label="Concepts covered">
+        {["Data Sharding", "Shard Key", "Active Replication", "Passive Replication", "High Availability", "Fault Tolerance"].map((badge) => (
+          <span key={badge} className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-bold text-cyan-900">{badge}</span>
         ))}
+      </div>
+
+      <section className="overflow-hidden rounded-2xl border border-cyan-200 bg-gradient-to-br from-white via-sky-50/60 to-cyan-50 shadow-xl shadow-cyan-100/60">
+        <SectionHeader eyebrow="Sharding canvas" title="Trace a record from request to storage" status={busy && shardPhase !== "idle" ? "Routing now" : "Ready"} />
+        <div className="p-4 sm:p-6">
+          <div className="grid gap-3 lg:grid-cols-[0.8fr_auto_0.9fr_auto_2fr] lg:items-stretch">
+            <FlowNode title="Incoming Record" detail={activeRecord ? `#${activeRecord.id} · ${activeRecord.region}` : "Waiting for a generated record"} active={shardPhase === "incoming"} marker="01" />
+            <FlowArrow active={shardPhase === "decision"} label="key" />
+            <FlowNode title="Shard Key Decision" detail={shardKey === "userId" ? "userId % 3" : "region → fixed map"} active={shardPhase === "decision"} marker="ƒ(x)" tone="amber" />
+            <FlowArrow active={shardPhase === "shard"} label="route" />
+            <div className="grid min-w-0 gap-3 sm:grid-cols-3">
+              {shards.map((shard) => <ShardCard key={shard.id} shard={shard} active={shardPhase === "shard" && targetShard === shard.id} shardKey={shardKey} />)}
+            </div>
+          </div>
+          <div className="mt-4 rounded-xl border border-sky-200 bg-white p-4" aria-live="polite">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-700">Latest routing decision</p>
+            <p className="mt-2 break-words font-mono text-sm font-bold leading-6 text-slate-900">{latestDecision}</p>
+          </div>
+        </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <SimulatorPanel
-          title="Shard Key and Record Routing"
-          summary="Insert a user record and observe the shard-key calculation that determines which shard owns it."
-        >
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="block">
-              <span className="text-sm font-semibold text-slate-700">
-                Record ID
-              </span>
-              <select
-                value={selectedRecordId}
-                onChange={(event) => selectMockRecord(Number(event.target.value))}
-                className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100"
-              >
-                {mockRecords.map((record) => (
-                  <option key={record.id} value={record.id}>
-                    User #{record.id}
-                  </option>
-                ))}
+      <section className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-800">Controls</p>
+          <h2 className="mt-1 text-xl font-bold text-slate-950">Change the routing experiment</h2>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <label className="sm:col-span-2 lg:col-span-1">
+              <span className="text-xs font-bold text-slate-600">Shard key</span>
+              <select value={shardKey} onChange={(event) => changeShardKey(event.target.value as ShardKey)} disabled={busy} className={selectClass}>
+                <option value="userId">userId</option><option value="region">region</option>
               </select>
             </label>
-
-            <label className="block">
-              <span className="text-sm font-semibold text-slate-700">
-                User name
-              </span>
-              <input
-                value={recordName}
-                onChange={(event) => setRecordName(event.target.value)}
-                className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100"
-              />
-            </label>
+            <ActionButton onClick={() => addRecords(1)} disabled={busy}>Add Record</ActionButton>
+            <ActionButton onClick={() => addRecords(5)} disabled={busy} variant="secondary">Add Burst ×5</ActionButton>
+            <ActionButton onClick={resetSimulation} disabled={busy} variant="secondary">Reset Simulation</ActionButton>
           </div>
+        </div>
 
-          <div className="mt-5 flex flex-wrap gap-3">
-            <ActionButton onClick={insertRecord}>Insert Record</ActionButton>
-            <ActionButton onClick={resetStorage} variant="secondary">
-              Reset Storage
-            </ActionButton>
+        <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Status & metrics</p>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <Metric label="Total records" value={totalRecords} />
+            <Metric label="Shard key" value={shardKey} />
+            {shards.map((shard) => <Metric key={shard.id} label={shardNames[shard.id]} value={`${shard.records.length} records`} />)}
+            <Metric label="Mode" value={replicationMode === "active" ? "Active" : "Passive"} />
+            <Metric label="Healthy shards" value={`${healthyShards}/3`} tone={healthyShards === 3 ? "success" : "warning"} />
+            <Metric label="Healthy replicas" value={`${healthyReplicas}/3`} tone={healthyReplicas === 3 ? "success" : healthyReplicas ? "warning" : "error"} />
+            <Metric label="Availability" value={availability} tone={availability === "Available" ? "success" : availability === "Degraded" ? "warning" : "error"} />
           </div>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
-            The modulo routing rule produces deterministic shard assignments
-            that can be traced during discussion.
-          </p>
-
-          <ResultBox text={routeMessage} />
-        </SimulatorPanel>
-
-        <SimulatorPanel
-          title="Read Record"
-          summary="Reads use the same shard key. A healthy replica can answer when the primary shard has failed."
-        >
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-700">
-              Record ID to read
-            </span>
-            <input
-              type="number"
-              value={readRecordId}
-              onChange={(event) => setReadRecordId(Number(event.target.value))}
-              className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100"
-            />
-          </label>
-
-          <div className="mt-5 flex flex-wrap gap-3">
-            <ActionButton onClick={readRecord}>Read Record</ActionButton>
-          </div>
-
-          <ResultBox text={readResult} />
-        </SimulatorPanel>
+        </aside>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-        <SimulatorPanel
-          title="Replication Mode"
-          summary={getReplicationExplanation(replicationMode)}
-        >
-          <div className="grid gap-3 sm:grid-cols-3">
-            {replicationModes.map((mode) => (
-              <button
-                key={mode.id}
-                type="button"
-                onClick={() => changeReplicationMode(mode.id)}
-                className={`rounded-md border px-4 py-3 text-sm font-semibold transition-colors ${
-                  replicationMode === mode.id
-                    ? "border-cyan-700 bg-cyan-700 text-white"
-                    : "border-slate-300 bg-white text-slate-800 hover:bg-slate-100"
-                }`}
-              >
-                {mode.label}
+      <section className="overflow-hidden rounded-2xl border border-sky-200 bg-gradient-to-br from-white to-sky-50 shadow-sm">
+        <SectionHeader eyebrow="Replication canvas" title="Compare parallel and primary-backup writes" status={replicationMode === "active" ? "Active mode" : "Passive mode"} />
+        <div className="p-4 sm:p-6">
+          <div className="grid gap-3 sm:grid-cols-2" role="group" aria-label="Replication mode">
+            {(["active", "passive"] as ReplicationMode[]).map((mode) => (
+              <button key={mode} type="button" disabled={busy} onClick={() => changeReplicationMode(mode)} aria-pressed={replicationMode === mode} className={`rounded-xl border p-4 text-left transition-all ${replicationMode === mode ? "border-cyan-600 bg-cyan-50 ring-2 ring-cyan-100" : "border-slate-200 bg-white hover:border-cyan-300"}`}>
+                <span className="font-bold text-slate-950">{mode === "active" ? "Active Replication" : "Passive Replication"}</span>
+                <span className="mt-1 block text-sm leading-5 text-slate-600">{mode === "active" ? "Client → all replicas in parallel" : "Client → Primary → Backup replicas"}</span>
               </button>
             ))}
           </div>
 
-          <div className="mt-5 flex flex-wrap gap-3">
-            <ActionButton
-              onClick={syncPassiveReplicas}
-              disabled={replicationMode !== "passive"}
-              variant="secondary"
-            >
-              Sync Passive Replicas
-            </ActionButton>
+          <div className="mt-5 grid gap-3 lg:grid-cols-[0.65fr_auto_2fr] lg:items-center">
+            <FlowNode title="Client Write" detail={`Next operation: W${writeNumber}`} active={replicaPhase === "client"} marker="W" />
+            <FlowArrow active={replicaPhase === "primary" || replicaPhase === "replicas"} label={replicationMode === "active" ? "fan out" : "commit"} />
+            <div className="grid gap-3 sm:grid-cols-3">
+              {replicas.map((replica) => (
+                <ReplicaCard key={replica.id} replica={replica} active={replicationMode === "active" ? replicaPhase === "replicas" : replica.id === 0 ? replicaPhase === "primary" : replicaPhase === "replicas"} pending={replicationMode === "passive" && replica.id > 0 && replicaPhase === "primary"} />
+              ))}
+            </div>
           </div>
-        </SimulatorPanel>
-
-        <SimulatorPanel
-          title="Failure Simulation"
-          summary="Fail Shard 1 to test primary shard failure. Fail replicas to show when the backup copy cannot help."
-        >
-          <div className="flex flex-wrap gap-3">
-            <ActionButton
-              onClick={toggleShardOneFailure}
-              variant={selectedShardOne?.healthy ? "danger" : "secondary"}
-            >
-              Toggle Shard 1 Failure
-            </ActionButton>
-            <ActionButton
-              onClick={toggleReplicaFailure}
-              variant={replicaFailed ? "secondary" : "danger"}
-            >
-              Toggle Replica Failure
-            </ActionButton>
-            <ActionButton onClick={resetStorage} variant="secondary">
-              Reset Storage
-            </ActionButton>
-          </div>
-
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <MetricBox
-              label="Shard 1 primary"
-              value={selectedShardOne?.healthy ? "Healthy" : "Failed"}
-              tone={selectedShardOne?.healthy ? "success" : "error"}
-            />
-            <MetricBox
-              label="Replica layer"
-              value={replicaFailed ? "Failed" : "Healthy"}
-              tone={replicaFailed ? "error" : "success"}
-            />
-          </div>
-        </SimulatorPanel>
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-2">
-        <InfoPanel title="Shard Key Explanation">
-          <ul className="space-y-3">
-            <li>A Shard Key decides where a record belongs.</li>
-            <li>Records with different keys can be stored on different nodes.</li>
-            <li>This reduces the amount of data each node must store.</li>
-            <li>
-              This simulator uses <code>recordId % shardCount</code> to produce
-              deterministic shard assignments.
-            </li>
-          </ul>
-        </InfoPanel>
-
-        <InfoPanel title="High Availability">
-          <ul className="space-y-3">
-            <li>
-              Without replication: failure of a shard makes its data
-              unavailable.
-            </li>
-            <li>With replication: another copy may answer read requests.</li>
-            <li>
-              Replication improves availability but adds coordination
-              complexity.
-            </li>
-          </ul>
-        </InfoPanel>
-      </section>
-
-      <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-xl font-bold text-slate-950">Recent Event Log</h2>
-        <div className="mt-4 grid gap-3 lg:grid-cols-2">
-          {logs.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-              No events yet. Run a simulation to see the flow.
-            </p>
-          ) : (
-            logs.map((log) => (
-              <div
-                key={log.id}
-                className={`rounded-lg border p-3 text-sm leading-6 ${getToneClass(log.tone)}`}
-              >
-                {log.text}
-              </div>
-            ))
-          )}
+          <div className={`mt-4 rounded-xl border p-4 text-sm font-bold leading-6 ${replicaPhase === "primary" ? "border-amber-200 bg-amber-50 text-amber-950" : "border-sky-200 bg-white text-slate-900"}`} aria-live="polite">{replicationStatus}</div>
+          <ActionButton onClick={simulateWrite} disabled={busy} className="mt-4">Simulate Write</ActionButton>
         </div>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-        {conceptCards.map((concept) => (
-          <article
-            key={concept.title}
-            className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
-          >
-            <h2 className="text-xl font-bold text-slate-950">
-              {concept.title}
-            </h2>
-            <p className="mt-3 leading-7 text-slate-700">
-              {concept.explanation}
-            </p>
-          </article>
-        ))}
+      <section className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-rose-700">Failure simulation</p>
+          <h2 className="mt-1 text-xl font-bold text-slate-950">Fail or recover one node</h2>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <label><span className="text-xs font-bold text-slate-600">Node layer</span><select value={failureType} disabled={busy} onChange={(event) => { setFailureType(event.target.value as "shard" | "replica"); setFailureId(0); }} className={selectClass}><option value="shard">Shard</option><option value="replica">Replica</option></select></label>
+            <label><span className="text-xs font-bold text-slate-600">Selected node</span><select value={failureId} disabled={busy} onChange={(event) => setFailureId(Number(event.target.value))} className={selectClass}>{[0, 1, 2].map((id) => <option key={id} value={id}>{failureType === "shard" ? shardNames[id] : `Replica ${id + 1}${id === 0 ? " (Primary)" : " (Backup)"}`}</option>)}</select></label>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <ActionButton onClick={toggleSelectedNode} disabled={busy} variant={selectedFailed ? "secondary" : "danger"}>{selectedFailed ? "Recover selected node" : "Fail selected node"}</ActionButton>
+            <ActionButton onClick={resetSimulation} disabled={busy} variant="secondary">Reset</ActionButton>
+          </div>
+          <div className={`mt-4 rounded-xl border p-4 text-sm leading-6 ${toneClass(availability === "Available" ? "success" : availability === "Degraded" ? "warning" : "error")}`}>
+            <strong>{availability}.</strong> {availabilityMessage(availability, replicationMode, primaryHealthy)}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-800">Recent event timeline</p>
+          <h2 className="mt-1 text-xl font-bold text-slate-950">What the system decided</h2>
+          <ol className="mt-4 space-y-2" aria-live="polite">
+            {events.map((event, index) => <li key={event.id} className={`flex gap-3 rounded-xl border p-3 text-sm leading-6 ${toneClass(event.tone)}`}><span className="shrink-0 font-mono text-xs font-black opacity-60">{String(events.length - index).padStart(2, "0")}</span><span>{event.text}</span></li>)}
+          </ol>
+        </div>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-xl font-bold text-slate-950">
-          Which Distributed Systems concepts does this prove?
-        </h2>
-        <ul className="mt-4 grid gap-3 text-slate-700 md:grid-cols-2">
-          {proofItems.map((concept) => (
-            <li key={concept} className="rounded-lg bg-slate-50 p-3 leading-7">
-              {concept}
-            </li>
-          ))}
-        </ul>
+      <section className="rounded-2xl border border-cyan-200 bg-gradient-to-br from-cyan-50 to-white p-5 shadow-sm sm:p-6">
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-800">Academic explanation</p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {(Object.keys(explanations) as Concept[]).map((item) => <button key={item} type="button" onClick={() => setConcept(item)} className={`rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${concept === item ? "border-cyan-700 bg-cyan-700 text-white" : "border-cyan-200 bg-white text-cyan-900 hover:bg-cyan-100"}`}>{item}</button>)}
+        </div>
+        <h2 className="mt-5 text-2xl font-bold text-slate-950">{concept}</h2>
+        <div className="mt-5 grid gap-4 md:grid-cols-3">
+          <Explanation label="Concept proven" text={explanation.proven} />
+          <Explanation label="What this demonstrates" text={explanation.demonstrates} />
+          <Explanation label="Why it matters" text={explanation.matters} />
+        </div>
       </section>
     </PageShell>
   );
 }
 
-function ShardCard({
-  shard,
-  replicationMode,
-  replicaFailed,
-}: {
-  shard: Shard;
-  replicationMode: ReplicationMode;
-  replicaFailed: boolean;
-}) {
-  return (
-    <article
-      className={`rounded-lg border bg-white p-5 shadow-sm ${
-        shard.healthy ? "border-slate-200" : "border-rose-200 bg-rose-50"
-      }`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-bold text-slate-950">Shard {shard.id}</h2>
-          <StatusPill
-            label="Status"
-            value={shard.healthy ? "Healthy" : "Failed"}
-            tone={shard.healthy ? "success" : "error"}
-          />
-        </div>
-        <div className="rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white">
-          Key % {shardCount}
-        </div>
-      </div>
-
-      <RecordList
-        title="Records stored in the shard"
-        records={shard.records}
-        emptyText="No records stored yet. Insert a record to start."
-      />
-
-      {replicationMode !== "none" ? (
-        <div className="mt-5 border-t border-slate-200 pt-4">
-          <StatusPill
-            label="Replica status"
-            value={replicaFailed ? "Failed" : "Healthy"}
-            tone={replicaFailed ? "error" : "success"}
-          />
-          <RecordList
-            title="Replica records"
-            records={shard.replicaRecords}
-            emptyText={
-              replicationMode === "passive"
-                ? "Replica has no synced records yet."
-                : "Replica has no records yet."
-            }
-          />
-          {replicationMode === "passive" ? (
-            <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
-              Pending passive sync: {shard.pendingReplicaRecords.length} record
-              {" "}
-              {getCopyWord(shard.pendingReplicaRecords.length)}.
-            </p>
-          ) : null}
-        </div>
-      ) : (
-        <p className="mt-5 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-600">
-          Replica status is hidden because No Replication is selected.
-        </p>
-      )}
-    </article>
-  );
+function SectionHeader({ eyebrow, title, status }: { eyebrow: string; title: string; status: string }) {
+  return <div className="flex flex-col gap-3 border-b border-cyan-100 bg-white/80 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-800">{eyebrow}</p><h2 className="mt-1 text-xl font-bold text-slate-950 sm:text-2xl">{title}</h2></div><span className="w-fit rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-900"><span className="mr-2 inline-block h-2 w-2 rounded-full bg-cyan-500" />{status}</span></div>;
 }
 
-function RecordList({
-  title,
-  records,
-  emptyText,
-}: {
-  title: string;
-  records: StoredRecord[];
-  emptyText: string;
-}) {
-  return (
-    <div className="mt-5">
-      <h3 className="text-sm font-semibold uppercase tracking-normal text-slate-600">
-        {title}
-      </h3>
-      <div className="mt-3 space-y-2">
-        {records.length === 0 ? (
-          <p className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-3 text-sm leading-6 text-slate-600">
-            {emptyText}
-          </p>
-        ) : (
-          records.map((record) => (
-            <p
-              key={record.id}
-              className="rounded-md border border-cyan-100 bg-cyan-50 p-3 text-sm font-semibold text-cyan-950"
-            >
-              {getRecordLabel(record)}
-            </p>
-          ))
-        )}
-      </div>
-    </div>
-  );
+function FlowNode({ title, detail, active, marker, tone = "cyan" }: { title: string; detail: string; active: boolean; marker: string; tone?: "cyan" | "amber" }) {
+  const color = tone === "amber" ? "border-amber-200 bg-amber-50" : "border-cyan-200 bg-cyan-50";
+  return <article className={`relative min-w-0 rounded-xl border p-4 transition-all duration-300 ${color} ${active ? "-translate-y-1 shadow-lg ring-2 ring-cyan-200 motion-reduce:translate-y-0" : "shadow-sm"}`} aria-current={active ? "step" : undefined}><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white font-mono text-xs font-black text-cyan-900 shadow-sm">{marker}</span><h3 className="mt-3 font-bold text-slate-950">{title}</h3><p className="mt-1 break-words text-sm leading-5 text-slate-600">{detail}</p>{active ? <Packet /> : null}</article>;
 }
 
-function SimulatorPanel({
-  title,
-  summary,
-  children,
-}: {
-  title: string;
-  summary: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="text-2xl font-bold text-slate-950">{title}</h2>
-      <p className="mt-2 leading-7 text-slate-700">{summary}</p>
-      <div className="mt-5">{children}</div>
-    </section>
-  );
+function FlowArrow({ active, label }: { active: boolean; label: string }) {
+  return <div className={`flex min-h-10 items-center justify-center gap-2 text-xs font-bold uppercase tracking-wide transition-colors ${active ? "text-cyan-700" : "text-slate-400"}`}><span className={`h-0.5 w-8 rounded-full transition-all ${active ? "w-12 bg-cyan-500" : "bg-slate-300"}`} /><span>{label}</span><span aria-hidden="true">→</span></div>;
 }
 
-function InfoPanel({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="text-xl font-bold text-slate-950">{title}</h2>
-      <div className="mt-4 leading-7 text-slate-700">{children}</div>
-    </section>
-  );
+function Packet() {
+  return <span className="absolute right-3 top-3 flex h-4 w-4" aria-hidden="true"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-500 opacity-40 motion-reduce:animate-none" /><span className="relative inline-flex h-4 w-4 animate-bounce rounded-full border-2 border-white bg-cyan-500 shadow motion-reduce:animate-none" /></span>;
 }
 
-function ResultBox({ text }: { text: string }) {
-  return (
-    <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm font-semibold leading-6 text-slate-800">
-      {text}
-    </div>
-  );
+function ShardCard({ shard, active, shardKey }: { shard: Shard; active: boolean; shardKey: ShardKey }) {
+  return <article className={`relative min-w-0 rounded-xl border p-4 transition-all ${shard.healthy ? active ? "border-cyan-400 bg-cyan-50 shadow-lg ring-2 ring-cyan-100" : "border-slate-200 bg-white" : "border-rose-300 bg-rose-50"}`}><div className="flex flex-wrap items-start justify-between gap-2"><div><h3 className="font-bold text-slate-950">{shardNames[shard.id]}</h3><p className={`mt-1 text-xs font-bold ${shard.healthy ? "text-emerald-700" : "text-rose-700"}`}>● {shard.healthy ? "Healthy" : "Failed"}</p></div><span className="rounded-md bg-slate-100 px-2 py-1 font-mono text-xs font-bold text-slate-700">{shard.records.length}</span></div><p className="mt-3 text-xs leading-5 text-slate-500">{shardKey === "userId" ? `userId % 3 = ${shard.id}` : `${regions[shard.id]} → ${shardNames[shard.id]}`}</p><div className="mt-3 flex min-h-8 flex-wrap gap-1.5">{shard.records.length ? shard.records.slice(-5).map((record) => <span key={`${record.id}-${record.name}`} className="max-w-full truncate rounded-md border border-cyan-200 bg-white px-2 py-1 font-mono text-xs font-bold text-cyan-900">#{record.id}</span>) : <span className="text-xs italic text-slate-400">No records</span>}</div>{active ? <Packet /> : null}</article>;
 }
 
-function MetricBox({
-  label,
-  value,
-  tone = "normal",
-}: {
-  label: string;
-  value: string | number;
-  tone?: LogTone;
-}) {
-  return (
-    <div className={`rounded-lg border p-3 ${getToneClass(tone)}`}>
-      <p className="text-sm font-semibold">{label}</p>
-      <p className="mt-1 text-lg font-bold">{value}</p>
-    </div>
-  );
+function ReplicaCard({ replica, active, pending }: { replica: Replica; active: boolean; pending: boolean }) {
+  return <article className={`relative min-w-0 rounded-xl border p-4 transition-all ${!replica.healthy ? "border-rose-300 bg-rose-50" : pending ? "border-amber-300 bg-amber-50" : active ? "border-cyan-400 bg-cyan-50 shadow-lg ring-2 ring-cyan-100" : "border-slate-200 bg-white"}`}><div className="flex items-start justify-between gap-2"><div><h3 className="font-bold text-slate-950">Replica {replica.id + 1}</h3><p className="mt-1 text-xs font-semibold text-slate-500">{replica.role}</p></div><span className={`rounded-full px-2 py-1 text-[11px] font-black ${replica.healthy ? pending ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>{replica.healthy ? pending ? "WAITING" : "HEALTHY" : "FAILED"}</span></div><p className="mt-4 text-xs font-semibold text-slate-600">Processed writes: {replica.writes.length}</p><div className="mt-2 flex min-h-7 flex-wrap gap-1">{replica.writes.slice(-4).map((write) => <span key={`${replica.id}-${write}`} className="rounded bg-sky-100 px-2 py-1 font-mono text-xs font-bold text-sky-900">{write}</span>)}</div>{active && replica.healthy ? <Packet /> : null}</article>;
 }
 
-function StatusPill({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone: LogTone;
-}) {
-  const toneClass =
-    tone === "success"
-      ? "bg-emerald-100 text-emerald-800"
-      : "bg-rose-100 text-rose-800";
-
-  return (
-    <p className={`mt-2 w-fit rounded-full px-3 py-1 text-sm font-semibold ${toneClass}`}>
-      {label}: {value}
-    </p>
-  );
+function Metric({ label, value, tone = "normal" }: { label: string; value: string | number; tone?: Tone }) {
+  return <div className={`min-w-0 rounded-xl border p-3 ${toneClass(tone)}`}><p className="text-xs font-semibold opacity-70">{label}</p><p className="mt-1 break-words font-mono text-sm font-bold sm:text-base">{value}</p></div>;
 }
 
-function ActionButton({
-  children,
-  onClick,
-  disabled = false,
-  variant = "primary",
-}: {
-  children: React.ReactNode;
-  onClick: () => void;
-  disabled?: boolean;
-  variant?: "primary" | "secondary" | "danger";
-}) {
-  const variantClass =
-    variant === "danger"
-      ? "border-rose-700 bg-rose-700 text-white hover:bg-rose-800"
-      : variant === "secondary"
-        ? "border-slate-300 bg-white text-slate-800 hover:bg-slate-100"
-        : "border-cyan-700 bg-cyan-700 text-white hover:bg-cyan-800";
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`rounded-md border px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${variantClass}`}
-    >
-      {children}
-    </button>
-  );
+function Explanation({ label, text }: { label: string; text: string }) {
+  return <div className="rounded-xl border border-cyan-100 bg-white p-4"><h3 className="text-sm font-bold text-cyan-900">{label}</h3><p className="mt-2 leading-7 text-slate-700">{text}</p></div>;
 }
 
-function getShardId(recordId: number) {
-  return ((recordId % shardCount) + shardCount) % shardCount;
+function ActionButton({ children, onClick, disabled = false, variant = "primary", className = "" }: { children: React.ReactNode; onClick: () => void; disabled?: boolean; variant?: "primary" | "secondary" | "danger"; className?: string }) {
+  const style = variant === "danger" ? "border-rose-700 bg-rose-700 text-white hover:bg-rose-800" : variant === "secondary" ? "border-slate-300 bg-white text-slate-800 hover:bg-slate-100" : "border-cyan-700 bg-cyan-700 text-white hover:bg-cyan-800";
+  return <button type="button" onClick={onClick} disabled={disabled} className={`min-h-11 rounded-lg border px-4 py-2 text-sm font-bold transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 motion-reduce:transition-none ${style} ${className}`}>{children}</button>;
 }
 
-function getRecordLabel(record: StoredRecord) {
-  return `User #${record.id} (${record.name})`;
-}
+const selectClass = "mt-1.5 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-900 shadow-sm outline-none focus:border-cyan-600 focus:ring-2 focus:ring-cyan-100 disabled:opacity-50";
 
-function getCopyWord(count: number) {
-  return count === 1 ? "copy" : "copies";
-}
-
-function upsertRecord(records: StoredRecord[], nextRecord: StoredRecord) {
-  const recordExists = records.some((record) => record.id === nextRecord.id);
-
-  if (!recordExists) {
-    return [...records, nextRecord];
-  }
-
-  return records.map((record) =>
-    record.id === nextRecord.id ? nextRecord : record,
-  );
-}
-
-function removePendingRecord(records: StoredRecord[], recordId: number) {
-  return records.filter((record) => record.id !== recordId);
-}
-
-function getReplicationLabel(mode: ReplicationMode) {
-  if (mode === "active") {
-    return "Active Replication";
-  }
-
-  if (mode === "passive") {
-    return "Passive Replication";
-  }
-
-  return "No Replication";
-}
-
-function getReplicationExplanation(mode: ReplicationMode) {
-  if (mode === "active") {
-    return "Active replication updates the primary shard and replica immediately when a record is inserted.";
-  }
-
-  if (mode === "passive") {
-    return "Passive replication writes to the primary shard first. Backup replicas update only after manual sync in this simulator.";
-  }
-
-  return "No Replication stores data only on the target shard. If that shard fails, reads for its data fail.";
-}
-
-function getToneClass(tone: LogTone = "normal") {
-  if (tone === "success") {
-    return "border-emerald-200 bg-emerald-50 text-emerald-900";
-  }
-
-  if (tone === "warning") {
-    return "border-amber-200 bg-amber-50 text-amber-900";
-  }
-
-  if (tone === "error") {
-    return "border-rose-200 bg-rose-50 text-rose-900";
-  }
-
+function toneClass(tone: Tone) {
+  if (tone === "success") return "border-emerald-200 bg-emerald-50 text-emerald-900";
+  if (tone === "warning") return "border-amber-200 bg-amber-50 text-amber-900";
+  if (tone === "error") return "border-rose-200 bg-rose-50 text-rose-900";
   return "border-slate-200 bg-slate-50 text-slate-700";
+}
+
+function getAvailability(healthyShards: number, healthyReplicas: number, primaryHealthy: boolean, mode: ReplicationMode) {
+  if (healthyShards === 0 || healthyReplicas === 0 || (mode === "passive" && !primaryHealthy)) return "Unavailable";
+  if (healthyShards < 3 || healthyReplicas < 3) return "Degraded";
+  return "Available";
+}
+
+function availabilityMessage(status: string, mode: ReplicationMode, primaryHealthy: boolean) {
+  if (status === "Available") return "All shards and replicas can serve their intended role.";
+  if (status === "Unavailable") return mode === "passive" && !primaryHealthy ? "Passive writes need the Primary; this simulator does not perform leader election." : "No healthy copy is available for at least one required layer.";
+  return mode === "active" ? "Healthy replicas can still process writes, but redundancy is reduced." : "Service continues, but one shard or backup copy has failed.";
 }
