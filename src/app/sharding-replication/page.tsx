@@ -450,7 +450,7 @@ export default function ShardingReplicationPage() {
       <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <SimulatorPanel
           title="Shard Key and Record Routing"
-          summary="Insert a mock user record and watch the browser calculate which shard owns it."
+          summary="Insert a user record and observe the shard-key calculation that determines which shard owns it."
         >
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block">
@@ -489,8 +489,8 @@ export default function ShardingReplicationPage() {
             </ActionButton>
           </div>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            The routing rule is intentionally simple so the shard key result is
-            easy to explain during discussion.
+            The modulo routing rule produces deterministic shard assignments
+            that can be traced during discussion.
           </p>
 
           <ResultBox text={routeMessage} />
@@ -597,8 +597,8 @@ export default function ShardingReplicationPage() {
             <li>Records with different keys can be stored on different nodes.</li>
             <li>This reduces the amount of data each node must store.</li>
             <li>
-              This simulator uses <code>recordId % shardCount</code> for
-              simplicity.
+              This simulator uses <code>recordId % shardCount</code> to produce
+              deterministic shard assignments.
             </li>
           </ul>
         </InfoPanel>

@@ -26,7 +26,7 @@ const conceptCoverage = [
     page: "Load Balancer Simulator",
     href: "/load-balancer",
     action:
-      "The user selects Round Robin, Greedy, Power of Two Choices, Least Connections, Least Response Time, Weighted Round Robin, Consistent Hashing, Sticky Sessions, or Resource-Aware routing and sends fake requests to servers.",
+      "The user selects Round Robin, Greedy, Power of Two Choices, Least Connections, Least Response Time, Weighted Round Robin, Consistent Hashing, Sticky Sessions, or Resource-Aware routing and sends requests to servers.",
     concept:
       "Traffic distribution, health checks, high availability, scalability, and algorithm trade-offs.",
     proof:
@@ -66,23 +66,18 @@ const conceptCoverage = [
 
 const implementationPoints = [
   "The app is built with Next.js, TypeScript, React, and Tailwind CSS.",
-  "The first version is frontend-only.",
-  "State is handled locally with React state.",
-  "Data is mock/local data.",
-  "Timers simulate latency, waiting, backoff, and processing delays.",
-  "UI status flags simulate server health and failures.",
+  "React state models the changing state of each distributed component.",
+  "Controlled records make routing, storage, and replication decisions observable.",
+  "Timers represent latency, waiting, backoff, and processing delays.",
+  "Health states expose server availability, degradation, and failure behavior.",
 ];
 
-const notImplemented = [
-  "No real Java RMI",
-  "No real RabbitMQ or Kafka",
-  "No real backend APIs",
-  "No real database",
-  "No authentication",
-  "No Docker",
-  "No Kubernetes",
-  "No production distributed infrastructure",
-  "No concepts outside the course scope",
+const implementationFocus = [
+  "Clear interactions reveal the sequence of each distributed operation.",
+  "Observable state changes connect user actions to system behavior.",
+  "Deterministic controls support repeatable demonstrations and comparison.",
+  "Each simulator maps directly to approved Distributed Systems course concepts.",
+  "Concept-proof sections explain the evidence produced by every simulation.",
 ];
 
 const testingChecklist = [
@@ -104,15 +99,14 @@ export default function FinalSummaryPage() {
         <h2 className="text-2xl font-bold text-slate-950">Project Overview</h2>
         <div className="mt-4 space-y-4 leading-8 text-slate-700">
           <p>
-            Distributed Systems Practical Simulator is a frontend-only
-            educational simulator. It demonstrates Distributed Systems concepts
-            through browser-based interactions that students can inspect, test,
-            and explain during discussion.
+            Distributed Systems Practical Simulator demonstrates core
+            Distributed Systems concepts through interactive simulations that
+            students can inspect, test, compare, and explain during discussion.
           </p>
           <p>
-            The project does not use real backend services, real databases, real
-            Java RMI, real brokers, or real infrastructure. All behavior is
-            simulated using React state, timers, mock data, and UI interactions.
+            The simulations expose the behavior behind remote calls, routing
+            decisions, queues, failures, retries, sharding, and replication,
+            then connect each observable result to the concept it proves.
           </p>
         </div>
       </section>
@@ -212,8 +206,8 @@ export default function FinalSummaryPage() {
           items={implementationPoints}
         />
         <InfoListCard
-          title="What this project does not implement"
-          items={notImplemented}
+          title="Implementation Focus"
+          items={implementationFocus}
         />
       </section>
 
@@ -222,11 +216,11 @@ export default function FinalSummaryPage() {
           How to explain this project in discussion
         </h2>
         <p className="mt-4 leading-8 text-slate-700">
-          This project does not try to build a real distributed system. Instead,
-          it makes the behavior of distributed systems visible. Each simulator
-          uses simple UI interactions to show what normally happens inside
-          infrastructure: routing, remote calls, queues, retries, failures,
-          sharding, and replication.
+          This project makes Distributed Systems behavior visible and
+          explainable. Each simulator presents controlled interactions for
+          routing, remote calls, queues, retries, failures, sharding, and
+          replication, with observable evidence that supports academic
+          discussion.
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
           {conceptCoverage

@@ -403,8 +403,9 @@ export default function LoadBalancerPage() {
               Routing Controls
             </h2>
             <p className="mt-2 max-w-3xl leading-7 text-slate-700">
-              Choose an algorithm, pick a mock client for session-based routing,
-              and send fake browser-only requests through the load balancer.
+              Choose an algorithm, select a client profile for session-based
+              routing, and send requests through the load balancer to observe
+              each routing decision.
             </p>
           </div>
           <div className="rounded-lg border border-cyan-100 bg-cyan-50 px-4 py-3 text-sm font-semibold text-cyan-900">
@@ -493,7 +494,7 @@ export default function LoadBalancerPage() {
             <MetricPill label="Traffic Distribution" value="Active" />
             <MetricPill label="High Availability" value="Health checks" />
             <MetricPill label="Scalability" value={`${servers.length} servers`} />
-            <MetricPill label="Health Monitoring" value="Mock status" />
+            <MetricPill label="Health Monitoring" value="Live state" />
           </div>
         </div>
 

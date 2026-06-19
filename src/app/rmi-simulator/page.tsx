@@ -294,7 +294,10 @@ export default function RmiSimulatorPage() {
             crossing the network.
           </p>
           <p>The receiver gets deserialized data.</p>
-          <p>This simulator represents serialization visually only.</p>
+            <p>
+              The visualization traces serialization as data moves across the
+              network boundary.
+            </p>
         </InfoPanel>
 
         <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">

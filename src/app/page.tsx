@@ -47,7 +47,7 @@ const simulatorLinks = [
     explanation:
       "Review the concept coverage table and connect each simulator action to its Distributed Systems proof.",
     proof:
-      "The project remains frontend-only while demonstrating the approved course concepts clearly.",
+      "The project connects every implemented interaction to an approved Distributed Systems course concept.",
     href: "/final-summary",
   },
 ];
@@ -71,7 +71,7 @@ export default function Home() {
   return (
     <PageShell
       title="Distributed Systems Practical Simulator"
-      subtitle="An academic educational interface that explains how a simple local program becomes a Distributed System made of multiple services and servers."
+      subtitle="An interactive academic simulator that shows how local programs evolve into Distributed Systems composed of multiple services and servers."
     >
       <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <div className="max-w-4xl">
@@ -79,22 +79,21 @@ export default function Home() {
             Project Purpose
           </h2>
           <p className="mt-4 leading-8 text-slate-700">
-            Distributed Systems Practical Simulator is a frontend-only academic
-            app that makes core Distributed Systems behavior visible in the
-            browser. Each page turns one course concept into a small simulation
-            that can be run, observed, and explained during a university
-            discussion.
+            This project demonstrates core Distributed Systems concepts through
+            interactive simulations. Each page exposes an abstract distributed
+            behavior through controlled interactions that can be run, observed,
+            and explained during a university discussion.
           </p>
         </div>
         <div className="mt-6 rounded-lg border border-cyan-200 bg-cyan-50 p-4">
           <p className="text-sm font-bold uppercase tracking-normal text-cyan-900">
-            Important scope
+            Simulation Approach
           </p>
           <p className="mt-2 leading-7 text-cyan-950">
-            The app does not implement real infrastructure. It uses React state,
-            timers, mock records, and UI status flags to simulate RMI,
-            load balancing, RPC, message queues, fault tolerance, sharding, and
-            replication.
+            Observable state changes and controlled timing make remote calls,
+            load distribution, RPC, message queues, failures, retries,
+            sharding, and replication visible. Each interaction connects the
+            demonstrated behavior to the Distributed Systems concept it proves.
           </p>
         </div>
       </section>
