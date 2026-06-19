@@ -3,745 +3,474 @@
 import { useEffect, useRef, useState } from "react";
 import { PageShell } from "@/components/PageShell";
 
-type RpcStatus = "Idle" | "Waiting" | "Success" | "Failed";
-type RpcNode = "client" | "service";
-type LogTone = "normal" | "success" | "warning" | "error";
+type RpcStatus = "Idle" | "Waiting" | "Completed";
+type RpcPhase = "idle" | "request-start" | "request" | "processing" | "response-start" | "response" | "completed";
+type Message = { id: number; label: string };
+type LogTone = "normal" | "success" | "warning";
+type LogEntry = { id: number; text: string; tone: LogTone };
+type Focus = "rpc" | "message";
 
-type RpcStep = {
-  text: string;
-  node: RpcNode;
-  tone?: LogTone;
-};
-
-type QueueMessage = {
-  id: number;
-  content: string;
-};
-
-type LogEntry = {
-  id: number;
-  text: string;
-  tone?: LogTone;
-};
-
-const healthyRpcSteps: RpcStep[] = [
-  {
-    text: "Client sends a direct request to the RPC Service.",
-    node: "client",
-  },
-  {
-    text: "Client waits for the response.",
-    node: "client",
-    tone: "warning",
-  },
-  {
-    text: "RPC Service processes the request.",
-    node: "service",
-  },
-  {
-    text: "RPC Service sends the response back.",
-    node: "service",
-  },
-  {
-    text: "Client receives the result.",
-    node: "client",
-    tone: "success",
-  },
+const RPC_LATENCY = 1800;
+const PROCESSING_TIME = 900;
+const concepts = [
+  "RPC",
+  "Synchronous",
+  "Direct Request/Response",
+  "Producer",
+  "Queue",
+  "Consumer",
+  "Message Passing",
+  "Service Decoupling",
 ];
 
-const failedRpcSteps: RpcStep[] = [
-  {
-    text: "Client sends a direct request.",
-    node: "client",
-  },
-  {
-    text: "Client waits for response.",
-    node: "client",
-    tone: "warning",
-  },
-  {
-    text: "RPC Service is unavailable.",
-    node: "service",
-    tone: "error",
-  },
-  {
-    text: "RPC call fails because the client is tightly coupled to the service availability.",
-    node: "client",
-    tone: "error",
-  },
-];
-
-const messageTemplates = [
-  "Create report",
-  "Send notification",
+const messageLabels = [
+  "Generate report",
   "Update inventory",
-  "Generate invoice",
-  "Archive audit event",
-  "Refresh search index",
+  "Send notification",
+  "Create invoice",
+  "Archive event",
 ];
-
-const stepDelay = 560;
-const autoProcessDelay = 850;
 
 const guide = {
   howToUse: [
-    "Send RPC requests and toggle RPC service failure.",
-    "Produce messages, stop the consumer, and produce more messages.",
-    "Process the queue manually or with auto processing.",
+    "Run an RPC call and watch the client remain blocked until the response returns.",
+    "Send messages while the consumer is paused and observe the queue grow.",
+    "Resume the consumer and process queued work one message at a time.",
   ],
   observe: [
-    "RPC makes the client wait for the service response.",
-    "RPC failure affects the caller immediately.",
-    "Messages build up in the queue while the consumer is stopped.",
+    "RPC result data appears only after the direct response returns.",
+    "A producer finishes immediately after placing work in the queue.",
+    "Consumer availability changes queue length, but does not stop production.",
   ],
   concepts: [
-    "Synchronous RPC and direct service dependency.",
-    "Producer, queue, and consumer roles.",
-    "Message passing decouples sender and receiver.",
+    "Synchronous direct request/response communication.",
+    "Asynchronous queue-based communication.",
+    "Temporal decoupling between producer and consumer.",
   ],
 };
 
 export default function RpcVsMessagePassingPage() {
-  const [rpcFailed, setRpcFailed] = useState(false);
   const [rpcStatus, setRpcStatus] = useState<RpcStatus>("Idle");
-  const [rpcSteps, setRpcSteps] = useState<RpcStep[]>([]);
-  const [activeRpcNode, setActiveRpcNode] = useState<RpcNode | null>(null);
-  const [rpcRunning, setRpcRunning] = useState(false);
-  const [rpcRequestCount, setRpcRequestCount] = useState(0);
-
-  const [queue, setQueue] = useState<QueueMessage[]>([]);
-  const [consumerRunning, setConsumerRunning] = useState(true);
-  const [autoProcessing, setAutoProcessing] = useState(false);
-  const [producedCount, setProducedCount] = useState(0);
-  const [processedCount, setProcessedCount] = useState(0);
-  const [activeMessage, setActiveMessage] = useState<QueueMessage | null>(null);
-
+  const [rpcPhase, setRpcPhase] = useState<RpcPhase>("idle");
+  const [rpcProgress, setRpcProgress] = useState(0);
+  const [rpcResult, setRpcResult] = useState("No RPC result yet");
+  const [queue, setQueue] = useState<Message[]>([]);
+  const [produced, setProduced] = useState(0);
+  const [processed, setProcessed] = useState(0);
+  const [consumerPaused, setConsumerPaused] = useState(false);
+  const [processing, setProcessing] = useState<Message | null>(null);
+  const [latestResult, setLatestResult] = useState("No result yet");
+  const [producerTransit, setProducerTransit] = useState<string | null>(null);
+  const [producerMoving, setProducerMoving] = useState(false);
+  const [consumerMoving, setConsumerMoving] = useState(false);
+  const [focus, setFocus] = useState<Focus>("rpc");
   const [logs, setLogs] = useState<LogEntry[]>([
-    {
-      id: 1,
-      text: "Simulator ready. Compare a direct RPC call with queue-based Message Passing.",
-      tone: "normal",
-    },
+    { id: 1, text: "Simulator ready. Choose a communication style to begin.", tone: "normal" },
   ]);
 
-  const rpcTimersRef = useRef<number[]>([]);
-  const queueTimersRef = useRef<number[]>([]);
-  const logIdRef = useRef(1);
-  const messageIdRef = useRef(0);
-  const queueRef = useRef<QueueMessage[]>([]);
-  const consumerRunningRef = useRef(true);
+  const timerIds = useRef<number[]>([]);
+  const runId = useRef(0);
+  const messageId = useRef(0);
+  const logId = useRef(1);
 
-  function clearRpcTimers() {
-    rpcTimersRef.current.forEach((timerId) => window.clearTimeout(timerId));
-    rpcTimersRef.current = [];
+  function later(callback: () => void, delay: number) {
+    const id = window.setTimeout(() => {
+      timerIds.current = timerIds.current.filter((timer) => timer !== id);
+      callback();
+    }, delay);
+    timerIds.current.push(id);
   }
 
-  function clearQueueTimers() {
-    queueTimersRef.current.forEach((timerId) => window.clearTimeout(timerId));
-    queueTimersRef.current = [];
+  function wait(delay: number, currentRun: number) {
+    return new Promise<boolean>((resolve) => {
+      later(() => resolve(runId.current === currentRun), delay);
+    });
   }
 
   function addLog(text: string, tone: LogTone = "normal") {
-    logIdRef.current += 1;
-    const nextLog = { id: logIdRef.current, text, tone };
-    setLogs((currentLogs) => [nextLog, ...currentLogs].slice(0, 16));
+    const entry = { id: ++logId.current, text, tone };
+    setLogs((current) => [entry, ...current].slice(0, 8));
   }
 
-  function delay(ms: number) {
-    return new Promise<void>((resolve) => {
-      const timerId = window.setTimeout(resolve, ms);
-      rpcTimersRef.current.push(timerId);
-    });
-  }
-
-  async function sendRpcRequest() {
-    clearRpcTimers();
-    const nextRequestNumber = rpcRequestCount + 1;
-    const steps = rpcFailed ? failedRpcSteps : healthyRpcSteps;
-
-    setRpcRequestCount(nextRequestNumber);
-    setRpcSteps([]);
-    setActiveRpcNode(null);
-    setRpcRunning(true);
+  async function runRpcCall() {
+    if (rpcStatus === "Waiting") return;
+    const currentRun = ++runId.current;
+    setFocus("rpc");
     setRpcStatus("Waiting");
-    addLog(`RPC Request #${nextRequestNumber} sent to service`, "normal");
+    setRpcPhase("request-start");
+    setRpcProgress(0);
+    setRpcResult("Hidden until the response returns");
+    addLog("RPC request sent; client is waiting.", "warning");
 
-    for (const step of steps) {
-      setActiveRpcNode(step.node);
-      setRpcSteps((currentSteps) => [...currentSteps, step]);
-      await delay(stepDelay);
+    if (!(await wait(80, currentRun))) return;
+    setRpcPhase("request");
+    if (!(await wait(650, currentRun))) return;
+    setRpcPhase("processing");
+    for (const progress of [20, 40, 60, 80, 100]) {
+      if (!(await wait(RPC_LATENCY / 5, currentRun))) return;
+      setRpcProgress(progress);
     }
-
-    if (rpcFailed) {
-      setRpcStatus("Failed");
-      addLog(`RPC Request #${nextRequestNumber} failed because the service is unavailable`, "error");
-    } else {
-      setRpcStatus("Success");
-      addLog(`RPC Request #${nextRequestNumber} completed successfully`, "success");
-    }
-
-    setRpcRunning(false);
-    setActiveRpcNode(null);
+    setRpcPhase("response-start");
+    if (!(await wait(80, currentRun))) return;
+    setRpcPhase("response");
+    if (!(await wait(750, currentRun))) return;
+    setRpcPhase("completed");
+    setRpcStatus("Completed");
+    setRpcResult("Customer record #42 returned");
+    setLatestResult("RPC: Customer record #42 returned");
+    addLog("RPC response returned; the client can continue.", "success");
   }
 
-  function toggleRpcFailure() {
-    setRpcFailed((currentValue) => {
-      const nextValue = !currentValue;
-      addLog(
-        nextValue
-          ? "RPC Service failure enabled. Direct calls now fail immediately."
-          : "RPC Service recovered. Direct calls can complete again.",
-        nextValue ? "error" : "success",
-      );
-      return nextValue;
+  function enqueue(count: number) {
+    setFocus("message");
+    const nextMessages = Array.from({ length: count }, () => {
+      const id = ++messageId.current;
+      return { id, label: messageLabels[(id - 1) % messageLabels.length] };
     });
+    setQueue((current) => [...current, ...nextMessages]);
+    setProduced((current) => current + count);
+    setProducerTransit(count === 1 ? `MSG #${nextMessages[0].id}` : `+${count} MSG`);
+    setProducerMoving(false);
+    later(() => setProducerMoving(true), 40);
+    later(() => setProducerTransit(null), 600);
+
+    if (count === 1) {
+      addLog(`Message #${nextMessages[0].id} added to queue. Producer is free.`, "success");
+    } else {
+      addLog(`${count} messages added in a burst; producer did not wait.`, "success");
+    }
+    if (consumerPaused) addLog("Consumer paused; messages remain queued.", "warning");
   }
 
-  function produceMessage() {
-    const nextId = messageIdRef.current + 1;
-    const content = messageTemplates[(nextId - 1) % messageTemplates.length];
-    const nextMessage = { id: nextId, content };
-
-    messageIdRef.current = nextId;
-    setQueue((currentQueue) => [...currentQueue, nextMessage]);
-    setProducedCount((count) => count + 1);
-    addLog(`Message #${nextId} added to queue: ${content}`, "success");
-
-    if (!consumerRunningRef.current) {
-      addLog("Consumer is stopped. Message remains in queue.", "warning");
+  function processOne() {
+    setFocus("message");
+    if (consumerPaused) {
+      addLog("Consumer paused; messages remain queued.", "warning");
+      return;
     }
-  }
-
-  function processNextMessage() {
-    if (!consumerRunningRef.current) {
-      addLog("Consumer is stopped. Message remains in queue.", "warning");
-      return false;
-    }
-
-    const nextMessage = queueRef.current[0];
-
+    if (processing) return;
+    const nextMessage = queue[0];
     if (!nextMessage) {
-      addLog("Queue is empty. No message is available for the consumer.", "normal");
-      return false;
-    }
-
-    setQueue((currentQueue) => currentQueue.slice(1));
-    setProcessedCount((count) => count + 1);
-    setActiveMessage(nextMessage);
-    addLog(`Consumer processed Message #${nextMessage.id}`, "success");
-
-    const timerId = window.setTimeout(() => {
-      setActiveMessage((currentMessage) =>
-        currentMessage?.id === nextMessage.id ? null : currentMessage,
-      );
-      queueTimersRef.current = queueTimersRef.current.filter((id) => id !== timerId);
-    }, 600);
-    queueTimersRef.current.push(timerId);
-
-    return true;
-  }
-
-  function autoProcessQueue() {
-    if (autoProcessing) {
+      addLog("Queue is empty; there is no message to process.");
       return;
     }
 
-    if (!consumerRunningRef.current) {
-      addLog("Auto processing cannot continue because the consumer is stopped.", "warning");
-      return;
-    }
-
-    if (queueRef.current.length === 0) {
-      addLog("Auto processing found an empty queue.", "normal");
-      return;
-    }
-
-    setAutoProcessing(true);
-    addLog("Auto Process Queue started.", "normal");
-    scheduleAutoProcess();
-  }
-
-  function scheduleAutoProcess() {
-    const timerId = window.setTimeout(() => {
-      queueTimersRef.current = queueTimersRef.current.filter((id) => id !== timerId);
-
-      if (!consumerRunningRef.current) {
-        setAutoProcessing(false);
-        addLog("Auto processing paused because the consumer is stopped.", "warning");
-        return;
-      }
-
-      const processed = processNextMessage();
-
-      if (!processed || queueRef.current.length <= 1) {
-        setAutoProcessing(false);
-        addLog("Auto Process Queue finished.", "success");
-        return;
-      }
-
-      scheduleAutoProcess();
-    }, autoProcessDelay);
-
-    queueTimersRef.current.push(timerId);
+    setQueue((current) => current.slice(1));
+    setProcessing(nextMessage);
+    setConsumerMoving(false);
+    later(() => setConsumerMoving(true), 40);
+    addLog(`Consumer started processing Message #${nextMessage.id}.`);
+    later(() => {
+      setProcessing(null);
+      setConsumerMoving(false);
+      setProcessed((current) => current + 1);
+      setLatestResult(`Message #${nextMessage.id}: ${nextMessage.label} completed`);
+      addLog(`Consumer processed Message #${nextMessage.id}.`, "success");
+    }, PROCESSING_TIME);
   }
 
   function toggleConsumer() {
-    setConsumerRunning((currentValue) => {
-      const nextValue = !currentValue;
-
-      if (!nextValue) {
-        setAutoProcessing(false);
-        setActiveMessage(null);
-        clearQueueTimers();
-      }
-
+    setFocus("message");
+    setConsumerPaused((current) => {
+      const next = !current;
       addLog(
-        nextValue
-          ? "Consumer is running again and can process queued messages."
-          : "Consumer stopped. New messages will wait in the queue.",
-        nextValue ? "success" : "warning",
+        next
+          ? "Consumer paused; messages remain queued."
+          : "Consumer resumed and is ready for queued work.",
+        next ? "warning" : "success",
       );
-
-      return nextValue;
+      return next;
     });
   }
 
-  function resetQueue() {
-    clearQueueTimers();
-    messageIdRef.current = 0;
-    logIdRef.current = 1;
+  function reset() {
+    runId.current += 1;
+    timerIds.current.forEach((id) => window.clearTimeout(id));
+    timerIds.current = [];
+    messageId.current = 0;
+    logId.current = 1;
+    setRpcStatus("Idle");
+    setRpcPhase("idle");
+    setRpcProgress(0);
+    setRpcResult("No RPC result yet");
     setQueue([]);
-    setProducedCount(0);
-    setProcessedCount(0);
-    setActiveMessage(null);
-    setAutoProcessing(false);
-    setConsumerRunning(true);
-    setLogs([
-      {
-        id: 1,
-        text: "Queue reset. Producer, Queue, and Consumer counters are clear.",
-        tone: "normal",
-      },
-    ]);
+    setProduced(0);
+    setProcessed(0);
+    setConsumerPaused(false);
+    setProcessing(null);
+    setLatestResult("No result yet");
+    setProducerTransit(null);
+    setProducerMoving(false);
+    setConsumerMoving(false);
+    setFocus("rpc");
+    setLogs([{ id: 1, text: "Simulation reset. Both communication paths are idle.", tone: "normal" }]);
   }
 
   useEffect(() => {
-    queueRef.current = queue;
-  }, [queue]);
-
-  useEffect(() => {
-    consumerRunningRef.current = consumerRunning;
-  }, [consumerRunning]);
-
-  useEffect(() => {
-    return () => {
-      clearRpcTimers();
-      clearQueueTimers();
-    };
+    return () => timerIds.current.forEach((id) => window.clearTimeout(id));
   }, []);
+
+  const academic = focus === "rpc"
+    ? {
+        title: "Synchronous direct communication",
+        demonstrates: "The client waits while the remote service processes the request and returns a response.",
+        matters: "RPC is simple to reason about, but the caller depends on remote service latency and availability.",
+      }
+    : {
+        title: "Service decoupling",
+        demonstrates: "The producer can enqueue work even when the consumer is slow or paused.",
+        matters: "A queue absorbs temporary delay and separates producer timing from consumer timing.",
+      };
 
   return (
     <PageShell
-      title="RPC vs Message Passing Simulator"
-      subtitle="This simulator compares direct synchronous RPC calls with queue-based Message Passing. It shows how RPC makes the client wait for a service response, while Message Passing lets a producer place work into a queue for consumers to process later."
+      title="RPC vs Message Passing"
+      subtitle="RPC sends a direct request and waits for a response. Message Passing sends work to a queue so producer and consumer can operate independently."
       guide={guide}
     >
-      <section className="grid gap-4 xl:grid-cols-2">
-        <SimulatorPanel
-          title="RPC Direct Call"
-          summary="A client calls a service directly and waits until the service responds or fails."
-        >
-          <div className="grid gap-4 md:grid-cols-[1fr_120px_1fr] md:items-center">
-            <RpcNodeCard
-              title="Client"
-              detail={rpcStatus === "Waiting" ? "Waiting for response" : "Caller"}
-              active={activeRpcNode === "client"}
-            />
-            <div className="rounded-lg border border-cyan-200 bg-cyan-50 p-3 text-center text-sm font-semibold text-cyan-900">
-              Direct synchronous call
-            </div>
-            <RpcNodeCard
-              title="RPC Service"
-              detail={rpcFailed ? "Unavailable" : "Healthy service"}
-              active={activeRpcNode === "service"}
-              failed={rpcFailed}
-            />
-          </div>
-
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            <ActionButton onClick={sendRpcRequest} disabled={rpcRunning}>
-              Send RPC Request
-            </ActionButton>
-            <ActionButton
-              onClick={toggleRpcFailure}
-              disabled={rpcRunning}
-              variant={rpcFailed ? "danger" : "secondary"}
-            >
-              Toggle RPC Service Failure
-            </ActionButton>
-          </div>
-
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <MetricBox label="RPC status" value={rpcStatus} tone={getRpcTone(rpcStatus)} />
-            <MetricBox
-              label="Service availability"
-              value={rpcFailed ? "Failed" : "Healthy"}
-              tone={rpcFailed ? "error" : "success"}
-            />
-          </div>
-
-          <StepList steps={rpcSteps} emptyText="Send an RPC request to see the synchronous call flow." />
-        </SimulatorPanel>
-
-        <SimulatorPanel
-          title="Message Passing"
-          summary="A producer places work into a queue, and a consumer processes messages when it is able to run."
-        >
-          <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr_1fr]">
-            <MessageNodeCard title="Producer" detail="Adds work without waiting" />
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="font-semibold text-slate-950">Queue</h3>
-                  <p className="mt-1 text-sm leading-6 text-slate-600">
-                    Oldest message is processed first.
-                  </p>
-                </div>
-                <span className="rounded-full bg-cyan-100 px-3 py-1 text-sm font-semibold text-cyan-900">
-                  {queue.length} waiting
-                </span>
-              </div>
-              <div className="mt-4 space-y-3">
-                {queue.length === 0 ? (
-                  <div className="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-sm leading-6 text-slate-600">
-                    No messages in queue. Produce a message first.
-                  </div>
-                ) : (
-                  queue.map((message) => (
-                    <div
-                      key={message.id}
-                      className="rounded-lg border border-cyan-200 bg-white p-3 text-sm shadow-sm"
-                    >
-                      <p className="font-semibold text-slate-950">
-                        Message #{message.id}: {message.content}
-                      </p>
-                      <p className="mt-1 text-slate-600">Waiting for consumer</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-            <MessageNodeCard
-              title="Consumer"
-              detail={
-                activeMessage
-                  ? `Processed Message #${activeMessage.id}`
-                  : consumerRunning
-                    ? "Running"
-                    : "Stopped"
-              }
-              active={Boolean(activeMessage)}
-              stopped={!consumerRunning}
-            />
-          </div>
-
-          <div className="mt-5 flex flex-wrap gap-3">
-            <ActionButton onClick={produceMessage}>Produce Message</ActionButton>
-            <ActionButton onClick={processNextMessage} disabled={autoProcessing}>
-              Process Next Message
-            </ActionButton>
-            <ActionButton onClick={autoProcessQueue} disabled={autoProcessing}>
-              Auto Process Queue
-            </ActionButton>
-            <ActionButton
-              onClick={toggleConsumer}
-              variant={consumerRunning ? "danger" : "secondary"}
-            >
-              {consumerRunning ? "Stop Consumer" : "Start Consumer"}
-            </ActionButton>
-            <ActionButton onClick={resetQueue} variant="secondary">
-              Reset Queue
-            </ActionButton>
-          </div>
-
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricBox label="Queue length" value={queue.length} />
-            <MetricBox label="Produced count" value={producedCount} />
-            <MetricBox label="Processed count" value={processedCount} />
-            <MetricBox
-              label="Consumer status"
-              value={consumerRunning ? "Running" : "Stopped"}
-              tone={consumerRunning ? "success" : "warning"}
-            />
-          </div>
-        </SimulatorPanel>
-      </section>
-
-      <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-xl font-bold text-slate-950">Simulation Log</h2>
-        <div className="mt-4 grid gap-3 lg:grid-cols-2">
-          {logs.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-              No events yet. Run a simulation to see the flow.
-            </p>
-          ) : (
-            logs.map((log) => (
-              <div
-                key={log.id}
-                className={`rounded-lg border p-3 text-sm leading-6 ${getToneClass(log.tone)}`}
-              >
-                {log.text}
-              </div>
-            ))
-          )}
+      <section className="rounded-2xl border border-cyan-200 bg-gradient-to-r from-white via-cyan-50 to-sky-50 p-5 shadow-sm sm:p-6">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-800">Communication models</p>
+        <div className="mt-4 flex flex-wrap gap-2" aria-label="Concepts covered">
+          {concepts.map((concept) => (
+            <span key={concept} className="rounded-full border border-cyan-200 bg-white px-3 py-1.5 text-xs font-bold text-cyan-900 shadow-sm">
+              {concept}
+            </span>
+          ))}
         </div>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-2">
-        <ExplanationCard
-          title="RPC"
-          items={[
-            "Direct communication",
-            "Synchronous request/response",
-            "Client waits",
-            "Simple mental model",
-            "Failure affects the caller immediately",
-          ]}
-        />
-        <ExplanationCard
-          title="Message Passing"
-          items={[
-            "Producer sends message to queue",
-            "Consumer processes later",
-            "Producer and consumer are decoupled",
-            "Queue absorbs bursts of work",
-            "Useful when consumers are slow or temporarily unavailable",
-          ]}
-        />
+      <section>
+        <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-800">Live comparison canvas</p>
+            <h2 className="mt-1 text-xl font-bold text-slate-950">Same goal, different communication behavior</h2>
+          </div>
+          <p className="text-sm text-slate-600">Follow the moving packet, then compare who has to wait.</p>
+        </div>
+
+        <div className="grid min-w-0 gap-5 xl:grid-cols-2">
+          <LaneCard
+            label="Lane A"
+            title="RPC Direct Call"
+            description="One direct request/response path. The caller is blocked."
+            accent="cyan"
+          >
+            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)_minmax(0,1fr)] items-center gap-2">
+              <Node label="Client" detail={rpcStatus === "Waiting" ? "WAITING" : "Ready"} state={rpcStatus === "Waiting" ? "waiting" : rpcStatus === "Completed" ? "success" : "idle"} />
+              <div className="min-w-0 text-center">
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">RPC Stub / Request</p>
+                <FlowTrack
+                  direction={rpcPhase === "response" ? "back" : rpcPhase === "response-start" ? "response-start" : rpcPhase === "request" ? "forward" : rpcPhase === "request-start" ? "request-start" : "idle"}
+                  packet={rpcPhase === "response" || rpcPhase === "response-start" ? "RES" : "REQ"}
+                />
+                <p className="mt-1 truncate text-[10px] font-bold text-slate-500">{rpcPhase === "response" ? "Response returning" : "Direct channel"}</p>
+              </div>
+              <Node label="Remote Service" detail={rpcPhase === "processing" ? "Processing" : "Available"} state={rpcPhase === "processing" ? "active" : rpcPhase === "completed" ? "success" : "idle"} />
+            </div>
+
+            <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4">
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <span className="font-bold text-slate-700">Server latency / progress</span>
+                <span className="font-mono font-black text-cyan-800">{rpcProgress}%</span>
+              </div>
+              <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-slate-100">
+                <div className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-sky-600 transition-all duration-300 motion-reduce:transition-none" style={{ width: `${rpcProgress}%` }} />
+              </div>
+            </div>
+
+            <div className={`mt-3 rounded-xl border p-3 transition-colors ${rpcPhase === "completed" ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-slate-50"}`} aria-live="polite">
+              <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Response / Result</p>
+              <p className={`mt-1 text-sm font-bold ${rpcPhase === "completed" ? "text-emerald-900" : "text-slate-600"}`}>{rpcResult}</p>
+            </div>
+          </LaneCard>
+
+          <LaneCard
+            label="Lane B"
+            title="Message Passing"
+            description="The queue separates producer timing from consumer timing."
+            accent="sky"
+          >
+            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)_minmax(0,1fr)] items-center gap-2">
+              <Node label="Producer" detail={producerTransit ? "Sent · Free" : "Ready"} state={producerTransit ? "success" : "idle"} />
+              <div className="min-w-0 text-center">
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Queue / Broker</p>
+                <MessageTrack producerTransit={producerTransit} producerMoving={producerMoving} processing={processing} consumerMoving={consumerMoving} />
+                <p className="mt-1 text-[10px] font-bold text-slate-500">Store first · process later</p>
+              </div>
+              <Node label="Consumer" detail={consumerPaused ? "PAUSED" : processing ? `MSG #${processing.id}` : "Running"} state={consumerPaused ? "paused" : processing ? "active" : "idle"} />
+            </div>
+
+            <div className={`mt-5 rounded-xl border p-4 ${consumerPaused && queue.length ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-white"}`}>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-950">Stored messages</h3>
+                  <p className="mt-0.5 text-xs text-slate-500">FIFO · oldest message leaves first</p>
+                </div>
+                <span className={`rounded-full px-2.5 py-1 font-mono text-xs font-black ${queue.length ? "bg-amber-100 text-amber-900" : "bg-slate-100 text-slate-600"}`}>{queue.length} queued</span>
+              </div>
+              <div className="mt-3 flex min-h-20 flex-wrap content-start gap-2" aria-live="polite">
+                {queue.length ? queue.map((message, index) => (
+                  <span key={message.id} className="max-w-full rounded-lg border border-amber-200 bg-white px-2.5 py-2 font-mono text-[10px] font-bold text-amber-950 shadow-sm">
+                    #{message.id} · {message.label}{index === 0 ? " · NEXT" : ""}
+                  </span>
+                )) : (
+                  <p className="w-full rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3 text-center text-xs text-slate-500">Queue empty · send a message</p>
+                )}
+              </div>
+            </div>
+
+            <div className={`mt-3 rounded-xl border p-3 ${processing ? "border-cyan-200 bg-cyan-50" : processed ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-slate-50"}`}>
+              <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Processed Result</p>
+              <p className="mt-1 truncate text-sm font-bold text-slate-700">{processing ? `Processing Message #${processing.id}…` : processed ? latestResult : "No message processed yet"}</p>
+            </div>
+          </LaneCard>
+        </div>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-xl font-bold text-slate-950">
-          Which Distributed Systems concepts does this prove?
-        </h2>
-        <ul className="mt-4 grid gap-3 text-slate-700 md:grid-cols-2">
-          {[
-            "RPC is direct and synchronous.",
-            "Message Passing uses a queue between producer and consumer.",
-            "Queues decouple services.",
-            "Producers can continue sending work even if consumers are temporarily stopped.",
-            "Slow consumers cause queue buildup instead of immediate producer failure.",
-            "Different communication styles create different failure and latency behavior.",
-          ].map((concept) => (
-            <li key={concept} className="rounded-lg bg-slate-50 p-3 leading-7">
-              {concept}
-            </li>
-          ))}
-        </ul>
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-800">Controls</p>
+        <h2 className="mt-1 text-xl font-bold text-slate-950">Drive both communication paths</h2>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <ActionButton onClick={runRpcCall} disabled={rpcStatus === "Waiting"}>Run RPC Call</ActionButton>
+          <ActionButton onClick={() => enqueue(1)}>Send Message</ActionButton>
+          <ActionButton onClick={() => enqueue(4)}>Send Message Burst</ActionButton>
+          <ActionButton onClick={processOne} disabled={Boolean(processing)}>Process One Message</ActionButton>
+          <ActionButton onClick={toggleConsumer} variant={consumerPaused ? "resume" : "pause"}>{consumerPaused ? "Resume Consumer" : "Pause Consumer"}</ActionButton>
+          <ActionButton onClick={reset} variant="secondary">Reset</ActionButton>
+        </div>
+      </section>
+
+      <section className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-800">Status & metrics</p>
+          <h2 className="mt-1 text-xl font-bold text-slate-950">Current system state</h2>
+          <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <Metric label="RPC status" value={rpcStatus} tone={rpcStatus === "Waiting" ? "warning" : rpcStatus === "Completed" ? "success" : "normal"} />
+            <Metric label="RPC latency" value={`${RPC_LATENCY} ms`} />
+            <Metric label="Queue length" value={queue.length} tone={queue.length ? "warning" : "normal"} />
+            <Metric label="Produced" value={produced} />
+            <Metric label="Processed" value={processed} tone={processed ? "success" : "normal"} />
+            <Metric label="Consumer" value={consumerPaused ? "Paused" : processing ? "Processing" : "Running"} tone={consumerPaused ? "paused" : "success"} />
+          </dl>
+          <div className="mt-3 rounded-xl border border-cyan-100 bg-cyan-50 p-3">
+            <dt className="text-xs font-bold text-cyan-800">Latest result</dt>
+            <dd className="mt-1 break-words text-sm font-bold text-slate-950">{latestResult}</dd>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-800">Event timeline</p>
+          <h2 className="mt-1 text-xl font-bold text-slate-950">Recent communication events</h2>
+          <ol className="mt-5 space-y-2" aria-live="polite">
+            {logs.map((log) => (
+              <li key={log.id} className={`flex gap-3 rounded-xl border p-3 text-sm leading-5 ${toneClasses(log.tone)}`}>
+                <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${log.tone === "success" ? "bg-emerald-500" : log.tone === "warning" ? "bg-amber-500" : "bg-slate-400"}`} />
+                {log.text}
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-cyan-200 bg-gradient-to-r from-cyan-50 via-white to-sky-50 p-5 shadow-sm sm:p-6" aria-live="polite">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-800">Academic explanation</p>
+            <h2 className="mt-1 text-xl font-bold text-slate-950">What the current action proves</h2>
+          </div>
+          <span className="rounded-full bg-cyan-800 px-3 py-1.5 text-xs font-bold text-white">{focus === "rpc" ? "RPC focus" : "Message Passing focus"}</span>
+        </div>
+        <div className="mt-5 grid gap-4 md:grid-cols-3">
+          <Explanation label="Concept proven" text={academic.title} />
+          <Explanation label="Simulation demonstrates" text={academic.demonstrates} />
+          <Explanation label="Why it matters" text={academic.matters} />
+        </div>
       </section>
     </PageShell>
   );
 }
 
-function SimulatorPanel({
-  title,
-  summary,
-  children,
-}: {
-  title: string;
-  summary: string;
-  children: React.ReactNode;
-}) {
+function LaneCard({ label, title, description, accent, children }: { label: string; title: string; description: string; accent: "cyan" | "sky"; children: React.ReactNode }) {
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-950">{title}</h2>
-        <p className="mt-2 leading-7 text-slate-700">{summary}</p>
+    <article className={`min-w-0 overflow-hidden rounded-2xl border bg-gradient-to-b p-4 shadow-sm sm:p-5 ${accent === "cyan" ? "border-cyan-200 from-cyan-50 to-white" : "border-sky-200 from-sky-50 to-white"}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-cyan-800">{label}</p>
+          <h3 className="mt-1 text-xl font-black text-slate-950">{title}</h3>
+          <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
+        </div>
+        <span className="mt-1 h-3 w-3 shrink-0 animate-pulse rounded-full bg-cyan-500 motion-reduce:animate-none" />
       </div>
-      <div className="mt-5">{children}</div>
-    </section>
+      <div className="mt-6">{children}</div>
+    </article>
   );
 }
 
-function RpcNodeCard({
-  title,
-  detail,
-  active,
-  failed = false,
-}: {
-  title: string;
-  detail: string;
-  active: boolean;
-  failed?: boolean;
-}) {
+function Node({ label, detail, state }: { label: string; detail: string; state: "idle" | "active" | "waiting" | "success" | "paused" }) {
+  const style = state === "paused"
+    ? "border-rose-300 bg-rose-50 text-rose-900"
+    : state === "waiting"
+      ? "border-amber-300 bg-amber-50 text-amber-950 ring-2 ring-amber-100"
+      : state === "active"
+        ? "border-cyan-400 bg-cyan-50 text-cyan-950 ring-2 ring-cyan-100"
+        : state === "success"
+          ? "border-emerald-300 bg-emerald-50 text-emerald-950"
+          : "border-slate-200 bg-white text-slate-800";
   return (
-    <div
-      className={`rounded-lg border p-4 transition-colors ${
-        failed
-          ? "border-rose-200 bg-rose-50"
-          : active
-            ? "border-cyan-400 bg-cyan-50 ring-2 ring-cyan-100"
-            : "border-slate-200 bg-slate-50"
-      }`}
-    >
-      <h3 className="text-lg font-semibold text-slate-950">{title}</h3>
-      <p
-        className={`mt-2 text-sm leading-6 ${
-          failed ? "text-rose-700" : "text-slate-600"
-        }`}
-      >
-        {detail}
-      </p>
+    <div className={`min-w-0 rounded-xl border px-2 py-3 text-center shadow-sm transition-all duration-300 ${style}`}>
+      <div className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-current/10 font-mono text-xs font-black">{label.charAt(0)}</div>
+      <h4 className="break-words text-xs font-black leading-4 sm:text-sm">{label}</h4>
+      <p className="mt-1 break-words font-mono text-[9px] font-bold uppercase sm:text-[10px]">{detail}</p>
     </div>
   );
 }
 
-function MessageNodeCard({
-  title,
-  detail,
-  active = false,
-  stopped = false,
-}: {
-  title: string;
-  detail: string;
-  active?: boolean;
-  stopped?: boolean;
-}) {
+function FlowTrack({ direction, packet }: { direction: "request-start" | "forward" | "response-start" | "back" | "idle"; packet: string }) {
   return (
-    <div
-      className={`rounded-lg border p-4 transition-colors ${
-        stopped
-          ? "border-amber-200 bg-amber-50"
-          : active
-            ? "border-emerald-300 bg-emerald-50 ring-2 ring-emerald-100"
-            : "border-slate-200 bg-slate-50"
-      }`}
-    >
-      <h3 className="text-lg font-semibold text-slate-950">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-slate-600">{detail}</p>
+    <div className="relative mt-2 h-8" aria-hidden="true">
+      <div className="absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 bg-cyan-200" />
+      <span className="absolute right-0 top-1/2 -translate-y-1/2 text-cyan-500">›</span>
+      <span className="absolute left-0 top-1/2 -translate-y-1/2 text-cyan-500">‹</span>
+      {direction !== "idle" ? (
+        <span className={`absolute top-1/2 z-10 -translate-y-1/2 rounded-md px-1.5 py-1 font-mono text-[9px] font-black text-white shadow-md transition-[left] duration-700 motion-reduce:transition-none ${direction === "back" ? "left-0 bg-emerald-600" : direction === "response-start" ? "left-[calc(100%-2.25rem)] bg-emerald-600" : direction === "forward" ? "left-[calc(100%-2.25rem)] bg-cyan-700" : "left-0 bg-cyan-700"}`}>{packet}</span>
+      ) : null}
     </div>
   );
 }
 
-function StepList({
-  steps,
-  emptyText,
-}: {
-  steps: RpcStep[];
-  emptyText: string;
-}) {
+function MessageTrack({ producerTransit, producerMoving, processing, consumerMoving }: { producerTransit: string | null; producerMoving: boolean; processing: Message | null; consumerMoving: boolean }) {
   return (
-    <ol className="mt-5 space-y-3">
-      {steps.length === 0 ? (
-        <li className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-          {emptyText}
-        </li>
-      ) : (
-        steps.map((step, index) => (
-          <li
-            key={`${step.text}-${index}`}
-            className={`rounded-lg border p-3 text-sm leading-6 ${getToneClass(step.tone)}`}
-          >
-            <span className="mr-2 font-semibold">{index + 1}.</span>
-            {step.text}
-          </li>
-        ))
-      )}
-    </ol>
-  );
-}
-
-function ExplanationCard({ title, items }: { title: string; items: string[] }) {
-  return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="text-xl font-bold text-slate-950">{title}</h2>
-      <ul className="mt-4 space-y-3 text-slate-700">
-        {items.map((item) => (
-          <li key={item} className="flex gap-3 leading-7">
-            <span className="mt-3 h-2 w-2 shrink-0 rounded-full bg-cyan-600" />
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function MetricBox({
-  label,
-  value,
-  tone = "normal",
-}: {
-  label: string;
-  value: string | number;
-  tone?: LogTone;
-}) {
-  return (
-    <div className={`rounded-lg border p-3 ${getToneClass(tone)}`}>
-      <p className="text-sm font-semibold">{label}</p>
-      <p className="mt-1 text-lg font-bold">{value}</p>
+    <div className="relative mt-2 h-8" aria-hidden="true">
+      <div className="absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 bg-sky-200" />
+      <span className="absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded border-2 border-sky-500 bg-white" />
+      {producerTransit ? <span className={`absolute top-1/2 z-10 -translate-y-1/2 rounded-md bg-sky-700 px-1.5 py-1 font-mono text-[8px] font-black text-white shadow-md transition-[left] duration-500 motion-reduce:transition-none ${producerMoving ? "left-[42%]" : "left-0"}`}>{producerTransit}</span> : null}
+      {processing ? <span className={`absolute top-1/2 z-10 -translate-y-1/2 rounded-md bg-cyan-700 px-1.5 py-1 font-mono text-[8px] font-black text-white shadow-md transition-[left] duration-700 motion-reduce:transition-none ${consumerMoving ? "left-[calc(100%-2.5rem)]" : "left-1/2"}`}>#{processing.id}</span> : null}
     </div>
   );
 }
 
-function ActionButton({
-  children,
-  onClick,
-  disabled = false,
-  variant = "primary",
-}: {
-  children: React.ReactNode;
-  onClick: () => void;
-  disabled?: boolean;
-  variant?: "primary" | "secondary" | "danger";
-}) {
-  const variantClass =
-    variant === "danger"
+function ActionButton({ children, onClick, disabled = false, variant = "primary" }: { children: React.ReactNode; onClick: () => void; disabled?: boolean; variant?: "primary" | "secondary" | "pause" | "resume" }) {
+  const style = variant === "secondary"
+    ? "border-slate-300 bg-white text-slate-800 hover:bg-slate-100"
+    : variant === "pause"
       ? "border-rose-700 bg-rose-700 text-white hover:bg-rose-800"
-      : variant === "secondary"
-        ? "border-slate-300 bg-white text-slate-800 hover:bg-slate-100"
+      : variant === "resume"
+        ? "border-emerald-700 bg-emerald-700 text-white hover:bg-emerald-800"
         : "border-cyan-700 bg-cyan-700 text-white hover:bg-cyan-800";
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`rounded-md border px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${variantClass}`}
-    >
-      {children}
-    </button>
-  );
+  return <button type="button" onClick={onClick} disabled={disabled} className={`min-h-11 min-w-0 rounded-lg border px-3 py-2 text-sm font-bold transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${style}`}>{children}</button>;
 }
 
-function getRpcTone(status: RpcStatus): LogTone {
-  if (status === "Success") {
-    return "success";
-  }
-
-  if (status === "Failed") {
-    return "error";
-  }
-
-  if (status === "Waiting") {
-    return "warning";
-  }
-
-  return "normal";
+function Metric({ label, value, tone = "normal" }: { label: string; value: string | number; tone?: "normal" | "warning" | "success" | "paused" }) {
+  const style = tone === "paused" ? "border-rose-200 bg-rose-50 text-rose-900" : tone === "warning" ? "border-amber-200 bg-amber-50 text-amber-900" : tone === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-slate-50 text-slate-950";
+  return <div className={`min-w-0 rounded-xl border p-3 ${style}`}><dt className="text-xs font-semibold opacity-70">{label}</dt><dd className="mt-1 break-words font-mono text-base font-black sm:text-lg">{value}</dd></div>;
 }
 
-function getToneClass(tone: LogTone = "normal") {
-  if (tone === "success") {
-    return "border-emerald-200 bg-emerald-50 text-emerald-900";
-  }
+function Explanation({ label, text }: { label: string; text: string }) {
+  return <div className="rounded-xl border border-cyan-100 bg-white/90 p-4"><h3 className="text-sm font-bold text-cyan-900">{label}</h3><p className="mt-2 text-sm leading-6 text-slate-700">{text}</p></div>;
+}
 
-  if (tone === "warning") {
-    return "border-amber-200 bg-amber-50 text-amber-900";
-  }
-
-  if (tone === "error") {
-    return "border-rose-200 bg-rose-50 text-rose-900";
-  }
-
+function toneClasses(tone: LogTone) {
+  if (tone === "success") return "border-emerald-200 bg-emerald-50 text-emerald-950";
+  if (tone === "warning") return "border-amber-200 bg-amber-50 text-amber-950";
   return "border-slate-200 bg-slate-50 text-slate-700";
 }
