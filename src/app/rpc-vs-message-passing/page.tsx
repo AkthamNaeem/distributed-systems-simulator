@@ -228,7 +228,7 @@ export default function RpcVsMessagePassingPage() {
       subtitle="RPC sends a direct request and waits for a response. Message Passing sends work to a queue so producer and consumer can operate independently."
       guide={guide}
     >
-      <section className="rounded-2xl border border-cyan-200 bg-gradient-to-r from-white via-cyan-50 to-sky-50 p-5 shadow-sm sm:p-6">
+      <section className="rounded-2xl border border-cyan-200 bg-gradient-to-r from-white via-cyan-50 to-sky-50 p-5 shadow-sm dark:border-cyan-800/60 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 dark:shadow-black/20 sm:p-6">
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-800">Communication models</p>
         <div className="mt-4 flex flex-wrap gap-2" aria-label="Concepts covered">
           {concepts.map((concept) => (
@@ -372,7 +372,7 @@ export default function RpcVsMessagePassingPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-cyan-200 bg-gradient-to-r from-cyan-50 via-white to-sky-50 p-5 shadow-sm sm:p-6" aria-live="polite">
+      <section className="rounded-2xl border border-cyan-200 bg-gradient-to-r from-cyan-50 via-white to-sky-50 p-5 shadow-sm dark:border-cyan-800/60 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 dark:shadow-black/20 sm:p-6" aria-live="polite">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-800">Academic explanation</p>
@@ -392,7 +392,7 @@ export default function RpcVsMessagePassingPage() {
 
 function LaneCard({ label, title, description, accent, children }: { label: string; title: string; description: string; accent: "cyan" | "sky"; children: React.ReactNode }) {
   return (
-    <article className={`min-w-0 overflow-hidden rounded-2xl border bg-gradient-to-b p-4 shadow-sm sm:p-5 ${accent === "cyan" ? "border-cyan-200 from-cyan-50 to-white" : "border-sky-200 from-sky-50 to-white"}`}>
+    <article className={`min-w-0 overflow-hidden rounded-2xl border bg-gradient-to-b p-4 shadow-sm dark:shadow-black/20 sm:p-5 ${accent === "cyan" ? "border-cyan-200 from-cyan-50 to-white dark:border-cyan-800/60 dark:from-slate-900 dark:to-slate-800" : "border-sky-200 from-sky-50 to-white dark:border-sky-800/60 dark:from-slate-900 dark:to-slate-800"}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-cyan-800">{label}</p>

@@ -252,7 +252,7 @@ export default function ShardingReplicationPage() {
         ))}
       </div>
 
-      <section className="overflow-hidden rounded-2xl border border-cyan-200 bg-gradient-to-br from-white via-sky-50/60 to-cyan-50 shadow-xl shadow-cyan-100/60">
+      <section className="overflow-hidden rounded-2xl border border-cyan-200 bg-gradient-to-br from-white via-sky-50/60 to-cyan-50 shadow-xl shadow-cyan-100/60 dark:border-cyan-800/60 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 dark:shadow-black/20">
         <SectionHeader eyebrow="Sharding canvas" title="Trace a record from request to storage" status={busy && shardPhase !== "idle" ? "Routing now" : "Ready"} />
         <div className="p-4 sm:p-6">
           <div className="grid gap-3 lg:grid-cols-[0.8fr_auto_0.9fr_auto_2fr] lg:items-stretch">
@@ -302,7 +302,7 @@ export default function ShardingReplicationPage() {
         </aside>
       </section>
 
-      <section className="overflow-hidden rounded-2xl border border-sky-200 bg-gradient-to-br from-white to-sky-50 shadow-sm">
+      <section className="overflow-hidden rounded-2xl border border-sky-200 bg-gradient-to-br from-white to-sky-50 shadow-sm dark:border-sky-800/60 dark:from-slate-900 dark:to-slate-800 dark:shadow-black/20">
         <SectionHeader eyebrow="Replication canvas" title="Compare parallel and primary-backup writes" status={replicationMode === "active" ? "Active mode" : "Passive mode"} />
         <div className="p-4 sm:p-6">
           <div className="grid gap-3 sm:grid-cols-2" role="group" aria-label="Replication mode">
@@ -354,7 +354,7 @@ export default function ShardingReplicationPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-cyan-200 bg-gradient-to-br from-cyan-50 to-white p-5 shadow-sm sm:p-6">
+      <section className="rounded-2xl border border-cyan-200 bg-gradient-to-br from-cyan-50 to-white p-5 shadow-sm dark:border-cyan-800/60 dark:from-cyan-950/30 dark:to-slate-900 dark:shadow-black/20 sm:p-6">
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-800">Academic explanation</p>
         <div className="mt-4 flex flex-wrap gap-2">
           {(Object.keys(explanations) as Concept[]).map((item) => <button key={item} type="button" onClick={() => setConcept(item)} className={`rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${concept === item ? "border-cyan-700 bg-cyan-700 text-white" : "border-cyan-200 bg-white text-cyan-900 hover:bg-cyan-100"}`}>{item}</button>)}

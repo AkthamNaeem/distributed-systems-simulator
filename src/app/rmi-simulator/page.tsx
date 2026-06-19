@@ -235,8 +235,8 @@ export default function RmiSimulatorPage() {
         ))}
       </div>
 
-      <section className="overflow-hidden rounded-2xl border border-cyan-200 bg-gradient-to-br from-white via-sky-50/70 to-cyan-50 shadow-xl shadow-cyan-100/70 ring-1 ring-cyan-100">
-        <div className="border-b border-cyan-200 bg-gradient-to-r from-cyan-50 via-white to-sky-50 px-5 py-5 sm:px-8 sm:py-6">
+      <section className="overflow-hidden rounded-2xl border border-cyan-200 bg-gradient-to-br from-white via-sky-50/70 to-cyan-50 shadow-xl shadow-cyan-100/70 ring-1 ring-cyan-100 dark:border-cyan-800/60 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 dark:shadow-black/20 dark:ring-cyan-900/60">
+        <div className="border-b border-cyan-200 bg-gradient-to-r from-cyan-50 via-white to-sky-50 px-5 py-5 dark:border-cyan-800/60 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 sm:px-8 sm:py-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-800">
@@ -519,7 +519,7 @@ export default function RmiSimulatorPage() {
           </ol>
         </div>
 
-        <aside className="rounded-2xl border border-cyan-200 bg-gradient-to-br from-cyan-50 to-white p-5 shadow-sm sm:p-6">
+        <aside className="rounded-2xl border border-cyan-200 bg-gradient-to-br from-cyan-50 to-white p-5 shadow-sm dark:border-cyan-800/60 dark:from-cyan-950/30 dark:to-slate-900 dark:shadow-black/20 sm:p-6">
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-800">Academic explanation</p>
           <p
             className={`mt-4 inline-flex rounded-full border px-3 py-1.5 text-sm font-bold ${

@@ -516,7 +516,7 @@ export default function LoadBalancerPage() {
         ))}
       </div>
 
-      <section className="overflow-hidden rounded-2xl border border-cyan-200 bg-gradient-to-br from-white via-sky-50/70 to-cyan-50 shadow-xl shadow-cyan-100/70 ring-1 ring-cyan-100">
+      <section className="overflow-hidden rounded-2xl border border-cyan-200 bg-gradient-to-br from-white via-sky-50/70 to-cyan-50 shadow-xl shadow-cyan-100/70 ring-1 ring-cyan-100 dark:border-cyan-800/60 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 dark:shadow-black/20 dark:ring-cyan-900/60">
         <div className="border-b border-cyan-200 bg-white/80 px-5 py-5 sm:px-7">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -651,7 +651,7 @@ export default function LoadBalancerPage() {
           </div>
         </div>
 
-        <aside className="rounded-2xl border border-cyan-200 bg-gradient-to-br from-cyan-50 to-white p-5 shadow-sm sm:p-6" aria-live="polite">
+        <aside className="rounded-2xl border border-cyan-200 bg-gradient-to-br from-cyan-50 to-white p-5 shadow-sm dark:border-cyan-800/60 dark:from-cyan-950/30 dark:to-slate-900 dark:shadow-black/20 sm:p-6" aria-live="polite">
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-800">Latest decision</p>
           <h2 className="mt-1 text-xl font-bold text-slate-950">{getAlgorithmLabel(algorithm)}</h2>
           <p className="mt-4 text-sm leading-6 text-slate-700">
@@ -731,7 +731,7 @@ export default function LoadBalancerPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-cyan-200 bg-gradient-to-r from-cyan-50 via-white to-sky-50 p-5 shadow-sm sm:p-6">
+      <section className="rounded-2xl border border-cyan-200 bg-gradient-to-r from-cyan-50 via-white to-sky-50 p-5 shadow-sm dark:border-cyan-800/60 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 dark:shadow-black/20 sm:p-6">
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-800">Academic explanation</p>
         <h2 className="mt-1 text-xl font-bold text-slate-950">What {getAlgorithmLabel(algorithm)} proves</h2>
         <div className="mt-5 grid gap-4 md:grid-cols-3">

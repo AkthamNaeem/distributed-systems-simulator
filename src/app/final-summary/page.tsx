@@ -207,21 +207,21 @@ export default function FinalSummaryPage() {
       title="Final Summary"
       subtitle="This page connects every simulator to the distributed systems concept it demonstrates."
     >
-      <section className="overflow-hidden rounded-2xl border border-cyan-200 bg-gradient-to-br from-white via-cyan-50 to-sky-50 shadow-sm">
+      <section className="overflow-hidden rounded-2xl border border-cyan-200 bg-gradient-to-br from-white via-cyan-50 to-sky-50 shadow-sm dark:border-cyan-800/60 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 dark:shadow-black/20">
         <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-800">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-800 dark:text-cyan-200">
               Project goal
             </p>
-            <h2 className="mt-2 text-2xl font-bold text-slate-950">
+            <h2 className="mt-2 text-2xl font-bold text-slate-950 dark:text-slate-100">
               Make distributed behavior visible and defensible
             </h2>
-            <p className="mt-4 max-w-3xl leading-7 text-slate-700">
+            <p className="mt-4 max-w-3xl leading-7 text-slate-700 dark:text-slate-300">
               This frontend educational simulator uses visual state, timers,
               mock data, and user interactions to model the decisions and
               failure conditions studied in Distributed Systems.
             </p>
-            <p className="mt-3 max-w-3xl leading-7 text-slate-700">
+            <p className="mt-3 max-w-3xl leading-7 text-slate-700 dark:text-slate-300">
               It intentionally models concepts rather than deploying real
               infrastructure, so each behavior stays controlled, repeatable,
               and easy to explain in an academic demonstration.
@@ -257,10 +257,10 @@ export default function FinalSummaryPage() {
           description="A compact map of where each concept appears, how the browser models it, and what the result proves."
           id="matrix-title"
         />
-        <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/20">
           <div className="hidden lg:block">
             <table className="w-full table-fixed border-collapse text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-slate-950">
+              <thead className="border-b border-slate-200 bg-slate-50 text-slate-950 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-100">
                 <tr>
                   <th className="w-[19%] px-4 py-3 font-bold">Concept</th>
                   <th className="w-[18%] px-4 py-3 font-bold">Where it appears</th>
@@ -268,13 +268,13 @@ export default function FinalSummaryPage() {
                   <th className="w-[29%] px-4 py-3 font-bold">What it proves</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 text-slate-700">
+              <tbody className="divide-y divide-slate-200 text-slate-700 dark:divide-slate-700 dark:text-slate-300">
                 {conceptMatrix.map((row) => (
                   <tr key={row.concept} className="align-top">
-                    <th className="px-4 py-4 font-bold leading-6 text-cyan-900">
+                    <th className="px-4 py-4 font-bold leading-6 text-cyan-900 dark:text-cyan-200">
                       {row.concept}
                     </th>
-                    <td className="px-4 py-4 font-semibold leading-6 text-slate-900">
+                    <td className="px-4 py-4 font-semibold leading-6 text-slate-900 dark:text-slate-100">
                       {row.where}
                     </td>
                     <td className="px-4 py-4 leading-6">{row.simulation}</td>
@@ -284,13 +284,13 @@ export default function FinalSummaryPage() {
               </tbody>
             </table>
           </div>
-          <div className="divide-y divide-slate-200 lg:hidden">
+          <div className="divide-y divide-slate-200 dark:divide-slate-700 lg:hidden">
             {conceptMatrix.map((row) => (
               <article key={row.concept} className="min-w-0 p-5">
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-cyan-800">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-cyan-800 dark:text-cyan-200">
                   {row.where}
                 </p>
-                <h3 className="mt-1 font-bold text-slate-950">{row.concept}</h3>
+                <h3 className="mt-1 font-bold text-slate-950 dark:text-slate-100">{row.concept}</h3>
                 <dl className="mt-4 space-y-3 text-sm leading-6">
                   <MatrixDetail label="How it is simulated" value={row.simulation} />
                   <MatrixDetail label="What it proves" value={row.proof} />
@@ -302,45 +302,45 @@ export default function FinalSummaryPage() {
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
-        <div className="rounded-2xl border border-sky-200 bg-sky-50 p-5 shadow-sm sm:p-6">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-800">
+        <div className="rounded-2xl border border-sky-200 bg-sky-50 p-5 shadow-sm dark:border-cyan-800/60 dark:bg-cyan-950/30 dark:shadow-black/20 sm:p-6">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-800 dark:text-cyan-200">
             Recommended demo flow
           </p>
-          <h2 className="mt-2 text-2xl font-bold text-slate-950">
+          <h2 className="mt-2 text-2xl font-bold text-slate-950 dark:text-slate-100">
             Present one connected argument
           </h2>
           <ol className="mt-5 space-y-3">
             {demoFlow.map(([page, purpose], index) => (
               <li
                 key={page}
-                className="flex min-w-0 gap-3 rounded-xl border border-sky-200 bg-white p-3.5"
+                className="flex min-w-0 gap-3 rounded-xl border border-sky-200 bg-white p-3.5 dark:border-cyan-800/60 dark:bg-slate-900/80"
               >
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-700 font-mono text-xs font-bold text-white">
                   {index + 1}
                 </span>
-                <p className="min-w-0 pt-1 text-sm leading-6 text-slate-700">
-                  <strong className="text-slate-950">{page}:</strong> {purpose}
+                <p className="min-w-0 pt-1 text-sm leading-6 text-slate-700 dark:text-slate-300">
+                  <strong className="text-slate-950 dark:text-slate-100">{page}:</strong> {purpose}
                 </p>
               </li>
             ))}
           </ol>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-800">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/20 sm:p-6">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-800 dark:text-cyan-200">
             Academic defense
           </p>
-          <h2 className="mt-2 text-2xl font-bold text-slate-950">
+          <h2 className="mt-2 text-2xl font-bold text-slate-950 dark:text-slate-100">
             Short answers to likely questions
           </h2>
           <div className="mt-5 space-y-3">
             {defenseQuestions.map((item) => (
               <article
                 key={item.question}
-                className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/70"
               >
-                <h3 className="font-bold text-slate-950">{item.question}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-700">
+                <h3 className="font-bold text-slate-950 dark:text-slate-100">{item.question}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-700 dark:text-slate-300">
                   {item.answer}
                 </p>
               </article>
@@ -349,11 +349,11 @@ export default function FinalSummaryPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-cyan-200 bg-gradient-to-r from-cyan-50 to-white p-5 shadow-sm sm:p-6">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-800">
+      <section className="rounded-2xl border border-cyan-200 bg-gradient-to-r from-cyan-50 to-white p-5 shadow-sm dark:border-cyan-800/60 dark:from-cyan-950/40 dark:to-slate-900 dark:shadow-black/20 sm:p-6">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-800 dark:text-cyan-200">
           Final conclusion
         </p>
-        <p className="mt-3 max-w-4xl text-lg font-bold leading-8 text-slate-950 sm:text-xl">
+        <p className="mt-3 max-w-4xl text-lg font-bold leading-8 text-slate-950 dark:text-slate-100 sm:text-xl">
           The project demonstrates that distributed systems are not only
           multiple servers, but also communication cost, routing decisions,
           failure handling, and data availability.
@@ -365,17 +365,17 @@ export default function FinalSummaryPage() {
 
 function ProofCard({ item }: { item: SimulatorProof }) {
   return (
-    <article className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-cyan-100 bg-gradient-to-r from-cyan-50 to-white p-5">
+    <article className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/20">
+      <div className="border-b border-cyan-100 bg-gradient-to-r from-cyan-50 to-white p-5 dark:border-cyan-800/60 dark:from-slate-900 dark:to-slate-800">
         <div className="flex items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-200 bg-white font-mono text-xs font-bold text-cyan-800">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-200 bg-white font-mono text-xs font-bold text-cyan-800 dark:border-cyan-800 dark:bg-cyan-950/50 dark:text-cyan-200">
             {item.number}
           </span>
           <div className="min-w-0">
-            <h3 className="text-xl font-bold text-slate-950">{item.page}</h3>
+            <h3 className="text-xl font-bold text-slate-950 dark:text-slate-100">{item.page}</h3>
             <Link
               href={item.href}
-              className="mt-1 inline-flex text-sm font-bold text-cyan-800 underline-offset-4 hover:underline focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700"
+              className="mt-1 inline-flex text-sm font-bold text-cyan-800 underline-offset-4 hover:underline focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 dark:text-cyan-200"
             >
               Open page <span aria-hidden="true" className="ml-1">→</span>
             </Link>
@@ -385,7 +385,7 @@ function ProofCard({ item }: { item: SimulatorProof }) {
           {item.concepts.map((concept) => (
             <span
               key={concept}
-              className="max-w-full rounded-full border border-cyan-200 bg-white px-2.5 py-1 text-xs font-bold text-cyan-900"
+              className="max-w-full rounded-full border border-cyan-200 bg-white px-2.5 py-1 text-xs font-bold text-cyan-900 dark:border-cyan-800 dark:bg-cyan-950/50 dark:text-cyan-200"
             >
               {concept}
             </span>
@@ -396,11 +396,11 @@ function ProofCard({ item }: { item: SimulatorProof }) {
         <CardDetail label="What the user interacts with" value={item.interaction} />
         <CardDetail label="Concept proven" value={item.proof} />
         <CardDetail label="Why it matters" value={item.matters} />
-        <div className="mt-auto rounded-xl border border-sky-200 bg-sky-50 p-4">
-          <dt className="text-xs font-bold uppercase tracking-[0.14em] text-sky-800">
+        <div className="mt-auto rounded-xl border border-sky-200 bg-sky-50 p-4 dark:border-cyan-800/60 dark:bg-cyan-950/30">
+          <dt className="text-xs font-bold uppercase tracking-[0.14em] text-sky-800 dark:text-cyan-200">
             Discussion sentence
           </dt>
-          <dd className="mt-2 font-semibold leading-6 text-slate-900">
+          <dd className="mt-2 font-semibold leading-6 text-slate-900 dark:text-slate-200">
             “{item.discussion}”
           </dd>
         </div>
@@ -422,13 +422,13 @@ function SectionIntro({
 }) {
   return (
     <div>
-      <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-800">
+      <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-800 dark:text-cyan-200">
         {eyebrow}
       </p>
-      <h2 id={id} className="mt-2 text-2xl font-bold text-slate-950 sm:text-3xl">
+      <h2 id={id} className="mt-2 text-2xl font-bold text-slate-950 dark:text-slate-100 sm:text-3xl">
         {title}
       </h2>
-      <p className="mt-3 max-w-3xl leading-7 text-slate-700">{description}</p>
+      <p className="mt-3 max-w-3xl leading-7 text-slate-700 dark:text-slate-300">{description}</p>
     </div>
   );
 }
@@ -436,8 +436,8 @@ function SectionIntro({
 function CardDetail({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="font-bold text-slate-950">{label}</dt>
-      <dd className="mt-1 text-slate-700">{value}</dd>
+      <dt className="font-bold text-slate-950 dark:text-slate-100">{label}</dt>
+      <dd className="mt-1 text-slate-700 dark:text-slate-300">{value}</dd>
     </div>
   );
 }
@@ -445,19 +445,19 @@ function CardDetail({ label, value }: { label: string; value: string }) {
 function MatrixDetail({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="font-bold text-slate-950">{label}</dt>
-      <dd className="mt-1 text-slate-700">{value}</dd>
+      <dt className="font-bold text-slate-950 dark:text-slate-100">{label}</dt>
+      <dd className="mt-1 text-slate-700 dark:text-slate-300">{value}</dd>
     </div>
   );
 }
 
 function Metric({ value, label }: { value: string; label: string }) {
   return (
-    <div className="min-w-0 rounded-xl border border-cyan-200 bg-white p-4 shadow-sm">
-      <p className="font-mono text-2xl font-black text-cyan-800 sm:text-3xl">
+    <div className="min-w-0 rounded-xl border border-cyan-200 bg-white p-4 shadow-sm dark:border-cyan-800/60 dark:bg-slate-800/70 dark:shadow-black/20">
+      <p className="font-mono text-2xl font-black text-cyan-800 dark:text-cyan-200 sm:text-3xl">
         {value}
       </p>
-      <p className="mt-1 text-xs font-bold leading-5 text-slate-600">{label}</p>
+      <p className="mt-1 text-xs font-bold leading-5 text-slate-600 dark:text-slate-400">{label}</p>
     </div>
   );
 }

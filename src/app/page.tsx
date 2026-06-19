@@ -175,7 +175,7 @@ export default function Home() {
       <SiteHeader />
       <main className="flex-1 overflow-hidden">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-          <section className="relative overflow-hidden rounded-2xl border border-cyan-200 bg-gradient-to-br from-white via-cyan-50 to-sky-50 p-6 shadow-sm sm:p-10">
+          <section className="relative overflow-hidden rounded-2xl border border-cyan-200 bg-gradient-to-br from-white via-cyan-50 to-sky-50 p-6 shadow-sm dark:border-cyan-800/60 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 dark:shadow-black/20 sm:p-10">
             <div className="absolute -right-20 -top-24 size-64 rounded-full border-[36px] border-white/60" aria-hidden="true" />
             <div className="relative max-w-4xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-white/80 px-3 py-1 text-xs font-bold uppercase tracking-wide text-cyan-800">

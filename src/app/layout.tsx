@@ -26,9 +26,17 @@ export default function RootLayout({
     <html
       lang="en"
       dir="ltr"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-slate-50 text-slate-950">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("ds-simulator-theme");document.documentElement.classList.toggle("dark",t==="dark")}catch(e){}})()`,
+          }}
+        />
+      </head>
+      <body className="flex min-h-full flex-col bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-slate-100">
         {children}
       </body>
     </html>
