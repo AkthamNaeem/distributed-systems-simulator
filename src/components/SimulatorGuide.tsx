@@ -1,3 +1,7 @@
+"use client";
+
+import { useLanguage } from "./LanguageProvider";
+
 export type SimulatorGuideContent = {
   howToUse: string[];
   observe: string[];
@@ -24,9 +28,10 @@ const guideSections = [
 ] as const;
 
 export function SimulatorGuide({ guide }: SimulatorGuideProps) {
+  const { t } = useLanguage();
   return (
     <section
-      aria-label="Simulator guide"
+      aria-label={t("Simulator guide")}
       className="grid gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:grid-cols-3"
     >
       {guideSections.map((section) => (
@@ -35,7 +40,7 @@ export function SimulatorGuide({ guide }: SimulatorGuideProps) {
           className="rounded-lg border border-slate-200 bg-slate-50 p-4"
         >
           <h2 className="text-sm font-bold uppercase tracking-normal text-slate-950">
-            {section.title}
+            {t(section.title)}
           </h2>
           <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
             {guide[section.key].map((item) => (

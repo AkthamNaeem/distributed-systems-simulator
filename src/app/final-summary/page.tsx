@@ -259,7 +259,7 @@ export default function FinalSummaryPage() {
         />
         <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/20">
           <div className="hidden lg:block">
-            <table className="w-full table-fixed border-collapse text-left text-sm">
+            <table className="w-full table-fixed border-collapse text-start text-sm">
               <thead className="border-b border-slate-200 bg-slate-50 text-slate-950 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-100">
                 <tr>
                   <th className="w-[19%] px-4 py-3 font-bold">Concept</th>
@@ -377,7 +377,7 @@ function ProofCard({ item }: { item: SimulatorProof }) {
               href={item.href}
               className="mt-1 inline-flex text-sm font-bold text-cyan-800 underline-offset-4 hover:underline focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-700 dark:text-cyan-200"
             >
-              Open page <span aria-hidden="true" className="ml-1">→</span>
+              Open page <span aria-hidden="true" className="ms-1">→</span>
             </Link>
           </div>
         </div>

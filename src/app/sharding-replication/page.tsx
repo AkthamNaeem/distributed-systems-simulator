@@ -255,7 +255,7 @@ export default function ShardingReplicationPage() {
       <section className="overflow-hidden rounded-2xl border border-cyan-200 bg-gradient-to-br from-white via-sky-50/60 to-cyan-50 shadow-xl shadow-cyan-100/60 dark:border-cyan-800/60 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 dark:shadow-black/20">
         <SectionHeader eyebrow="Sharding canvas" title="Trace a record from request to storage" status={busy && shardPhase !== "idle" ? "Routing now" : "Ready"} />
         <div className="p-4 sm:p-6">
-          <div className="grid gap-3 lg:grid-cols-[0.8fr_auto_0.9fr_auto_2fr] lg:items-stretch">
+          <div className="grid gap-3 lg:grid-cols-[0.8fr_auto_0.9fr_auto_2fr] lg:items-stretch" dir="ltr">
             <FlowNode title="Incoming Record" detail={activeRecord ? `#${activeRecord.id} · ${activeRecord.region}` : "Waiting for a generated record"} active={shardPhase === "incoming"} marker="01" />
             <FlowArrow active={shardPhase === "decision"} label="key" />
             <FlowNode title="Shard Key Decision" detail={shardKey === "userId" ? "userId % 3" : "region → fixed map"} active={shardPhase === "decision"} marker="ƒ(x)" tone="amber" />
@@ -307,14 +307,14 @@ export default function ShardingReplicationPage() {
         <div className="p-4 sm:p-6">
           <div className="grid gap-3 sm:grid-cols-2" role="group" aria-label="Replication mode">
             {(["active", "passive"] as ReplicationMode[]).map((mode) => (
-              <button key={mode} type="button" disabled={busy} onClick={() => changeReplicationMode(mode)} aria-pressed={replicationMode === mode} className={`rounded-xl border p-4 text-left transition-all ${replicationMode === mode ? "border-cyan-600 bg-cyan-50 ring-2 ring-cyan-100" : "border-slate-200 bg-white hover:border-cyan-300"}`}>
+              <button key={mode} type="button" disabled={busy} onClick={() => changeReplicationMode(mode)} aria-pressed={replicationMode === mode} className={`rounded-xl border p-4 text-start transition-all ${replicationMode === mode ? "border-cyan-600 bg-cyan-50 ring-2 ring-cyan-100" : "border-slate-200 bg-white hover:border-cyan-300"}`}>
                 <span className="font-bold text-slate-950">{mode === "active" ? "Active Replication" : "Passive Replication"}</span>
                 <span className="mt-1 block text-sm leading-5 text-slate-600">{mode === "active" ? "Client → all replicas in parallel" : "Client → Primary → Backup replicas"}</span>
               </button>
             ))}
           </div>
 
-          <div className="mt-5 grid gap-3 lg:grid-cols-[0.65fr_auto_2fr] lg:items-center">
+          <div className="mt-5 grid gap-3 lg:grid-cols-[0.65fr_auto_2fr] lg:items-center" dir="ltr">
             <FlowNode title="Client Write" detail={`Next operation: W${writeNumber}`} active={replicaPhase === "client"} marker="W" />
             <FlowArrow active={replicaPhase === "primary" || replicaPhase === "replicas"} label={replicationMode === "active" ? "fan out" : "commit"} />
             <div className="grid gap-3 sm:grid-cols-3">
@@ -371,7 +371,7 @@ export default function ShardingReplicationPage() {
 }
 
 function SectionHeader({ eyebrow, title, status }: { eyebrow: string; title: string; status: string }) {
-  return <div className="flex flex-col gap-3 border-b border-cyan-100 bg-white/80 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-800">{eyebrow}</p><h2 className="mt-1 text-xl font-bold text-slate-950 sm:text-2xl">{title}</h2></div><span className="w-fit rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-900"><span className="mr-2 inline-block h-2 w-2 rounded-full bg-cyan-500" />{status}</span></div>;
+  return <div className="flex flex-col gap-3 border-b border-cyan-100 bg-white/80 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-800">{eyebrow}</p><h2 className="mt-1 text-xl font-bold text-slate-950 sm:text-2xl">{title}</h2></div><span className="w-fit rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-900"><span className="me-2 inline-block h-2 w-2 rounded-full bg-cyan-500" />{status}</span></div>;
 }
 
 function FlowNode({ title, detail, active, marker, tone = "cyan" }: { title: string; detail: string; active: boolean; marker: string; tone?: "cyan" | "amber" }) {

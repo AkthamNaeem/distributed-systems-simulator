@@ -258,7 +258,7 @@ export default function RmiSimulatorPage() {
         </div>
 
         <div className="p-5 sm:p-8">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-7 lg:gap-2">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-7 lg:gap-2" dir="ltr">
             {NODES.map((node, index) => {
               const isActive = packetNode === node.id;
               const isSkipped =
@@ -344,7 +344,7 @@ export default function RmiSimulatorPage() {
             })}
           </div>
 
-          <div className="mt-4 hidden grid-cols-6 px-[7%] lg:grid" aria-hidden="true">
+          <div className="mt-4 hidden grid-cols-6 px-[7%] lg:grid" aria-hidden="true" dir="ltr">
             {NODES.slice(0, -1).map((node, index) => {
               const passed = mode === "remote" && activeStep > index;
               return (

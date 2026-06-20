@@ -300,7 +300,7 @@ export default function FaultTolerancePage() {
         </div>
 
         <div className="p-4 sm:p-7">
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_1fr_1fr]">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_1fr_1fr]" dir="ltr">
             <Node title="Client" detail={requestId ? `User request #${requestId}` : "Starts a user request"} icon="U" active={phase === "client" || phase === "return"} tone="cyan" />
             <Node title="FT Controller" detail={breaker === "Open" ? "Blocks harmful traffic" : "Routes, retries & protects"} icon="FT" active={phase === "controller" || phase === "backoff"} tone={breaker === "Open" ? "rose" : breaker === "Half-Open" ? "amber" : "cyan"} />
             <Node title="Primary Service" detail={primaryStatus} icon="P" active={phase === "primary" || phase === "heartbeat"} tone={primaryFailing ? "rose" : "emerald"} />
@@ -411,7 +411,7 @@ function AttemptCard({ number, delay, state }: { number: number; delay: number; 
 
 function BreakerPill({ state }: { state: BreakerState }) {
   const style = state === "Open" ? "border-rose-200 bg-rose-100 text-rose-900" : state === "Half-Open" ? "border-amber-200 bg-amber-100 text-amber-900" : "border-emerald-200 bg-emerald-100 text-emerald-900";
-  return <div className={`w-fit rounded-full border px-3 py-1.5 text-sm font-bold ${style}`}><span className="mr-2 inline-block h-2 w-2 rounded-full bg-current" />Circuit: {state}</div>;
+  return <div className={`w-fit rounded-full border px-3 py-1.5 text-sm font-bold ${style}`}><span className="me-2 inline-block h-2 w-2 rounded-full bg-current" />Circuit: {state}</div>;
 }
 
 function Metric({ label, value, tone = "normal" }: { label: string; value: string | number; tone?: Tone }) {

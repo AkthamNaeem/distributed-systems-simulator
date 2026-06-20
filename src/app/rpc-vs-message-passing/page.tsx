@@ -255,7 +255,7 @@ export default function RpcVsMessagePassingPage() {
             description="One direct request/response path. The caller is blocked."
             accent="cyan"
           >
-            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)_minmax(0,1fr)] items-center gap-2">
+            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)_minmax(0,1fr)] items-center gap-2" dir="ltr">
               <Node label="Client" detail={rpcStatus === "Waiting" ? "WAITING" : "Ready"} state={rpcStatus === "Waiting" ? "waiting" : rpcStatus === "Completed" ? "success" : "idle"} />
               <div className="min-w-0 text-center">
                 <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">RPC Stub / Request</p>
@@ -290,7 +290,7 @@ export default function RpcVsMessagePassingPage() {
             description="The queue separates producer timing from consumer timing."
             accent="sky"
           >
-            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)_minmax(0,1fr)] items-center gap-2">
+            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)_minmax(0,1fr)] items-center gap-2" dir="ltr">
               <Node label="Producer" detail={producerTransit ? "Sent · Free" : "Ready"} state={producerTransit ? "success" : "idle"} />
               <div className="min-w-0 text-center">
                 <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Queue / Broker</p>

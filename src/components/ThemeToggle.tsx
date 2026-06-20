@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { useLanguage } from "./LanguageProvider";
 
 type Theme = "light" | "dark";
 
@@ -21,6 +22,7 @@ function subscribe(callback: () => void) {
 
 export function ThemeToggle() {
   const theme = useSyncExternalStore(subscribe, getTheme, () => "light");
+  const { t } = useLanguage();
 
   function selectTheme(nextTheme: Theme) {
     localStorage.setItem(STORAGE_KEY, nextTheme);
@@ -31,7 +33,7 @@ export function ThemeToggle() {
   return (
     <div
       className="inline-flex shrink-0 rounded-lg border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-800"
-      aria-label="Color theme"
+      aria-label={t("Color theme")}
     >
       {(["light", "dark"] as const).map((option) => {
         const selected = theme === option;
@@ -48,7 +50,7 @@ export function ThemeToggle() {
             }`}
           >
             <span aria-hidden="true">{option === "light" ? "☀" : "☾"}</span>{" "}
-            <span className="hidden sm:inline">{option === "light" ? "Light" : "Dark"}</span>
+            <span className="hidden sm:inline">{t(option === "light" ? "Light" : "Dark")}</span>
           </button>
         );
       })}

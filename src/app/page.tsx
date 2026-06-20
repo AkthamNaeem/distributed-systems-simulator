@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
+import { useLanguage } from "@/components/LanguageProvider";
 
 type RunMode = "local" | "distributed" | null;
 type RunStatus = "idle" | "running" | "success" | "partial-failure";
@@ -103,6 +104,7 @@ function Node({
 }
 
 export default function Home() {
+  const { language, localize } = useLanguage();
   const [mode, setMode] = useState<RunMode>(null);
   const [status, setStatus] = useState<RunStatus>("idle");
   const [progress, setProgress] = useState(0);
@@ -170,10 +172,10 @@ export default function Home() {
               ? `${mode === "local" ? "Local" : "Distributed"} request completed successfully.`
               : "Service C failed. The client and earlier services are still running: this is a partial failure.";
 
-  return (
+  return localize(
     <>
       <SiteHeader />
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1 overflow-hidden text-start">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
           <section className="relative overflow-hidden rounded-2xl border border-cyan-200 bg-gradient-to-br from-white via-cyan-50 to-sky-50 p-6 shadow-sm dark:border-cyan-800/60 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 dark:shadow-black/20 sm:p-10">
             <div className="absolute -right-20 -top-24 size-64 rounded-full border-[36px] border-white/60" aria-hidden="true" />
@@ -210,8 +212,8 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_auto_1fr] lg:items-stretch">
-              <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_auto_1fr] lg:items-stretch" dir="ltr">
+              <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6" dir={language}>
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Starting point</p>
@@ -219,7 +221,7 @@ export default function Home() {
                   </div>
                   <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">Simple path</span>
                 </div>
-                <div className="mt-6 grid grid-cols-[minmax(0,1fr)_32px_minmax(0,1fr)] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="mt-6 grid grid-cols-[minmax(0,1fr)_32px_minmax(0,1fr)] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-4" dir="ltr">
                   <Node name="Caller" detail="same process" />
                   <ArrowIcon className="size-8 text-cyan-500" />
                   <Node name="Function" detail="direct call" state="success" />
@@ -235,7 +237,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <article className="rounded-2xl border border-cyan-200 bg-cyan-50/60 p-5 shadow-sm sm:p-6">
+              <article className="rounded-2xl border border-cyan-200 bg-cyan-50/60 p-5 shadow-sm sm:p-6" dir={language}>
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wide text-cyan-700">Scaled architecture</p>
@@ -243,7 +245,7 @@ export default function Home() {
                   </div>
                   <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Complex path</span>
                 </div>
-                <div className="mt-6 grid grid-cols-4 gap-2 rounded-xl border border-cyan-200 bg-white/70 p-3">
+                <div className="mt-6 grid grid-cols-4 gap-2 rounded-xl border border-cyan-200 bg-white/70 p-3" dir="ltr">
                   {["Client", "Service A", "Service B", "Service C"].map((name, index) => (
                     <div key={name} className="relative min-w-0">
                       {index > 0 ? <span className="absolute -left-2.5 top-1/2 h-px w-3 bg-cyan-300" aria-hidden="true" /> : null}
@@ -274,14 +276,14 @@ export default function Home() {
             </div>
 
             <div className="grid lg:grid-cols-[280px_minmax(0,1fr)]">
-              <div className="border-b border-slate-200 bg-slate-50 p-5 lg:border-b-0 lg:border-r sm:p-6">
+              <div className="border-b border-slate-200 bg-slate-50 p-5 lg:border-b-0 lg:border-e sm:p-6">
                 <h3 className="text-sm font-bold uppercase tracking-wide text-slate-700">Network conditions</h3>
                 <div className="mt-4 space-y-3">
-                  <button type="button" aria-pressed={congestion} onClick={() => setCongestion((value) => !value)} className={`flex w-full items-center justify-between gap-4 rounded-xl border p-3 text-left transition ${congestion ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-white hover:border-amber-200"}`}>
+                  <button type="button" aria-pressed={congestion} onClick={() => setCongestion((value) => !value)} className={`flex w-full items-center justify-between gap-4 rounded-xl border p-3 text-start transition ${congestion ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-white hover:border-amber-200"}`}>
                     <span><span className="block text-sm font-bold text-slate-900">Network Congestion</span><span className="mt-0.5 block text-xs text-slate-500">Slows packets between services</span></span>
                     <span className={`relative h-6 w-11 shrink-0 rounded-full transition ${congestion ? "bg-amber-500" : "bg-slate-300"}`}><span className={`absolute top-1 size-4 rounded-full bg-white shadow transition-all ${congestion ? "left-6" : "left-1"}`} /></span>
                   </button>
-                  <button type="button" aria-pressed={partialFailure} onClick={() => setPartialFailure((value) => !value)} className={`flex w-full items-center justify-between gap-4 rounded-xl border p-3 text-left transition ${partialFailure ? "border-rose-300 bg-rose-50" : "border-slate-200 bg-white hover:border-rose-200"}`}>
+                  <button type="button" aria-pressed={partialFailure} onClick={() => setPartialFailure((value) => !value)} className={`flex w-full items-center justify-between gap-4 rounded-xl border p-3 text-start transition ${partialFailure ? "border-rose-300 bg-rose-50" : "border-slate-200 bg-white hover:border-rose-200"}`}>
                     <span><span className="block text-sm font-bold text-slate-900">Partial Failure</span><span className="mt-0.5 block text-xs text-slate-500">Service C becomes unavailable</span></span>
                     <span className={`relative h-6 w-11 shrink-0 rounded-full transition ${partialFailure ? "bg-rose-500" : "bg-slate-300"}`}><span className={`absolute top-1 size-4 rounded-full bg-white shadow transition-all ${partialFailure ? "left-6" : "left-1"}`} /></span>
                   </button>
@@ -307,13 +309,13 @@ export default function Home() {
                   </div>
 
                   {mode === "local" ? (
-                    <div className="mt-6 grid grid-cols-[minmax(0,1fr)_40px_minmax(0,1fr)] items-center gap-2">
+                    <div className="mt-6 grid grid-cols-[minmax(0,1fr)_40px_minmax(0,1fr)] items-center gap-2" dir="ltr">
                       <Node name="Program" detail="caller" state={progress > 0 ? "success" : "normal"} />
                       <ArrowIcon className={`size-8 justify-self-center ${isRunning ? "animate-pulse text-cyan-600" : "text-slate-300"}`} />
                       <Node name="Function" detail="same process" state={status === "success" ? "success" : progress > 40 ? "active" : "normal"} />
                     </div>
                   ) : (
-                    <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4" dir="ltr">
                       {["Client", "Service A", "Service B", "Service C"].map((name, index) => {
                         const failed = status === "partial-failure" && index === 3;
                         const waiting = isRunning && congestion && index === distributedStep;

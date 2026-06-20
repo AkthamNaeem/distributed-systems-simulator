@@ -1,9 +1,12 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { SiteHeader } from "./SiteHeader";
 import {
   SimulatorGuide,
   type SimulatorGuideContent,
 } from "./SimulatorGuide";
+import { useLanguage } from "./LanguageProvider";
 
 type PageShellProps = {
   title: string;
@@ -13,11 +16,12 @@ type PageShellProps = {
 };
 
 export function PageShell({ title, subtitle, guide, children }: PageShellProps) {
-  return (
+  const { localize } = useLanguage();
+  return localize(
     <>
       <SiteHeader />
       <main className="flex-1">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 text-start sm:px-6 lg:px-8">
           <section className="border-b border-slate-200 pb-6">
             <p className="text-sm font-bold uppercase tracking-normal text-cyan-800">
               Distributed Systems Practical Simulator
@@ -33,6 +37,6 @@ export function PageShell({ title, subtitle, guide, children }: PageShellProps) 
           {children}
         </div>
       </main>
-    </>
+    </>,
   );
 }

@@ -531,7 +531,7 @@ export default function LoadBalancerPage() {
         </div>
 
         <div className="p-4 sm:p-7">
-          <div className="grid gap-3 lg:grid-cols-[0.8fr_0.8fr_1.15fr_1.35fr] lg:items-stretch">
+          <div className="grid gap-3 lg:grid-cols-[0.8fr_0.8fr_1.15fr_1.35fr] lg:items-stretch" dir="ltr">
             <FlowZone
               step="01"
               title="Clients / Incoming"
@@ -556,7 +556,7 @@ export default function LoadBalancerPage() {
             >
               <div className="flex h-16 items-center justify-center rounded-xl border border-cyan-200 bg-gradient-to-br from-cyan-600 to-sky-700 text-center text-sm font-black text-white shadow-md shadow-cyan-200">
                 LB
-                <span className="ml-2 font-mono text-xs font-semibold text-cyan-100">:443</span>
+                <span className="ms-2 font-mono text-xs font-semibold text-cyan-100">:443</span>
               </div>
               <PacketShelf packets={packets.filter((packet) => packet.stage === "balancer")} />
             </FlowZone>
@@ -720,7 +720,7 @@ export default function LoadBalancerPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-800">Event timeline</p>
           <h2 className="mt-1 text-xl font-bold text-slate-950">Latest routing events</h2>
-          <ol className="mt-5 max-h-[28rem] space-y-2 overflow-y-auto pr-1" aria-live="polite">
+          <ol className="mt-5 max-h-[28rem] space-y-2 overflow-y-auto pe-1" aria-live="polite">
             {logs.map((log) => (
               <li key={log.id} className={`flex gap-3 rounded-xl border p-3 text-sm leading-6 ${log.tone === "warning" ? "border-amber-200 bg-amber-50 text-amber-950" : log.tone === "success" ? "border-emerald-200 bg-emerald-50/70 text-emerald-950" : "border-slate-200 bg-slate-50 text-slate-700"}`}>
                 <span className={`mt-2 h-2 w-2 shrink-0 rounded-full ${log.tone === "warning" ? "bg-amber-500" : log.tone === "success" ? "bg-emerald-500" : "bg-slate-400"}`} />
