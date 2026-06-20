@@ -27,7 +27,7 @@ export function LanguageToggle() {
             lang={option.value}
             onClick={() => setLanguage(option.value)}
             aria-pressed={selected}
-            className={`min-h-9 rounded-xl px-3 py-2 text-xs font-semibold transition-colors sm:px-3.5 sm:text-sm ${
+            className={`min-h-8 rounded-full px-2.5 py-1.5 text-[11px] font-semibold transition-colors sm:px-3 sm:text-xs ${
               selected
                 ? "bg-white text-cyan-700 shadow-sm dark:bg-slate-800 dark:text-cyan-200"
                 : "text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"

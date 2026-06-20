@@ -3,6 +3,7 @@ const ar: Record<string, string> = {
   "Distributed Systems Practical Simulator": "محاكي الأنظمة الموزعة العملي",
   "Interactive academic learning": "تعلّم أكاديمي تفاعلي",
   "Home": "الرئيسية",
+  "Simulators": "المحاكيات",
   "RMI Simulator": "محاكي RMI",
   "Load Balancer": "موازن الأحمال Load Balancer",
   "RPC vs Message Passing": "RPC مقابل Message Passing",
