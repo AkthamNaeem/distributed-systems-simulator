@@ -31,10 +31,7 @@ export function ThemeToggle() {
   }
 
   return (
-    <div
-      className="inline-flex shrink-0 rounded-lg border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-800"
-      aria-label={t("Color theme")}
-    >
+    <div className="inline-flex shrink-0 items-stretch" role="group" aria-label={t("Color theme")}>
       {(["light", "dark"] as const).map((option) => {
         const selected = theme === option;
         return (
@@ -43,14 +40,13 @@ export function ThemeToggle() {
             type="button"
             onClick={() => selectTheme(option)}
             aria-pressed={selected}
-            className={`min-h-8 rounded-md px-2.5 text-xs font-bold transition-colors sm:px-3 ${
+            className={`min-h-9 rounded-xl px-3 py-2 text-xs font-semibold transition-colors sm:px-3.5 sm:text-sm ${
               selected
-                ? "bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-slate-100"
-                : "text-slate-600 hover:text-cyan-800 dark:text-slate-300 dark:hover:text-cyan-200"
+                ? "bg-white text-cyan-700 shadow-sm dark:bg-slate-800 dark:text-cyan-200"
+                : "text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
             }`}
           >
-            <span aria-hidden="true">{option === "light" ? "☀" : "☾"}</span>{" "}
-            <span className="hidden sm:inline">{t(option === "light" ? "Light" : "Dark")}</span>
+            {t(option === "light" ? "Light" : "Dark")}
           </button>
         );
       })}
