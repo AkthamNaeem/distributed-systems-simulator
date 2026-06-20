@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Distributed Systems Practical Simulator
 
-## Getting Started
+Distributed Systems Practical Simulator is an interactive educational web application that turns core Distributed Systems topics into observable, repeatable simulations. It connects course theory to visual behavior: users send requests, change system conditions, compare communication models, trigger failures, and inspect how routing and data-distribution decisions affect the system.
 
-First, run the development server:
+## Technical Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Next.js
+- TypeScript
+- React
+- Tailwind CSS
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Main Pages and Learning Evidence
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Route | Page | What the page demonstrates | Concept proven |
+| --- | --- | --- | --- |
+| `/` | Home | Compares a direct local call with a request that crosses multiple services, with optional congestion and partial failure. | Distribution enables separation and scale while introducing network latency, coordination, and partial failure. |
+| `/rmi-simulator` | RMI Simulator | Traces local and remote calls through a Stub, RMI Registry lookup, serialization, transport, remote execution, and response. | RMI presents a local-style interface while the operation still depends on discovery, serialization, the network, and a remote service. |
+| `/load-balancer` | Load Balancer Simulator | Sends traffic to multiple backend servers, switches routing algorithms, and changes server health and workload. | Load Balancing distributes work, uses health information, and supports scalability and High Availability. |
+| `/rpc-vs-message-passing` | RPC vs Message Passing | Compares a synchronous direct request with a Producer–Queue–Consumer flow, including a paused Consumer. | RPC couples caller and receiver in time, while a Queue decouples message production from consumption. |
+| `/fault-tolerance` | Fault Tolerance Lab | Exercises Retry + Backoff, Circuit Breaker, Fallback, Health Check, and Heartbeat behavior under service failure and recovery. | Fault-tolerance patterns contain failures and preserve useful system behavior when a dependency is unavailable. |
+| `/sharding-replication` | Sharding & Replication | Routes records using a Shard Key, compares Active and Passive Replication, and observes node failure and recovery. | Sharding distributes data placement; replication provides redundant copies for availability and fault tolerance. |
+| `/final-summary` | Final Summary | Maps every interaction to its course concept and presents the complete learning path as one argument. | Distributed Systems combine communication, routing, failure handling, and distributed data management. |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Run Locally
 
-## Learn More
+1. Install dependencies:
 
-To learn more about Next.js, take a look at the following resources:
+   ```bash
+   npm install
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. Start the development server:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   ```bash
+   npm run dev
+   ```
 
-## Deploy on Vercel
+3. Open [http://localhost:3000](http://localhost:3000) in a browser.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project Outcome
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The project provides a connected practical explanation of Distributed Systems. Each simulator produces visible evidence for a specific course concept, allowing the student to explain both the benefit of distribution and the technical challenges introduced by communication across services and machines.
